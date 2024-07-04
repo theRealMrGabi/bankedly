@@ -19,7 +19,11 @@
 		"test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
 		"test:e2e": "jest --config ./test/jest-e2e.json",
 		"prepare": "husky",
-		"pre-commit": "npx lint-staged"
+		"pre-commit": "npx lint-staged && npm run lint",
+		"typeorm": "typeorm-ts-node-commonjs",
+		"migration:create": "typeorm migration:create",
+		"migration:run": "typeorm migration:run",
+		"migration:run:ts-node": "typeorm-ts-node-commonjs migration:run"
 	},
 	"dependencies": {
 		"@nestjs/common": "^10.0.0",
@@ -28,6 +32,7 @@
 		"@nestjs/mapped-types": "*",
 		"@nestjs/platform-express": "^10.0.0",
 		"@nestjs/typeorm": "^10.0.2",
+		"bcryptjs": "^2.4.3",
 		"class-transformer": "^0.5.1",
 		"class-validator": "^0.14.1",
 		"cross-env": "^7.0.3",
@@ -40,6 +45,7 @@
 		"@nestjs/cli": "^10.0.0",
 		"@nestjs/schematics": "^10.0.0",
 		"@nestjs/testing": "^10.0.0",
+		"@types/bcryptjs": "^2.4.6",
 		"@types/express": "^4.17.17",
 		"@types/jest": "^29.5.2",
 		"@types/lint-staged": "^13.3.0",

@@ -3,9 +3,12 @@ import {
 	Column,
 	PrimaryGeneratedColumn,
 	CreateDateColumn,
-	UpdateDateColumn
+	UpdateDateColumn,
+	BeforeInsert
 } from 'typeorm'
-import { EmailStatus, UserRoles, AccountStatus } from '../users.interface'
+import * as bcrypt from 'bcryptjs'
+
+import { UserRoles, AccountStatus } from '../users.interface'
 
 @Entity()
 export class User {
@@ -27,14 +30,16 @@ export class User {
 	@Column({ unique: true })
 	email: string
 
+	@Column({ unique: true })
+	phoneNumber: string
+
 	@Column({
-		type: 'enum',
-		enum: EmailStatus,
-		default: EmailStatus.NOT_VERIFIED
+		type: 'boolean',
+		default: false
 	})
 	isEmailVerified: string
 
-	@CreateDateColumn()
+	@Column({ type: 'timestamp', nullable: true, default: null })
 	emailVerifiedAt: Date
 
 	@Column({
@@ -51,9 +56,15 @@ export class User {
 	})
 	role: string
 
-	@CreateDateColumn()
+	@CreateDateColumn({ type: 'timestamp' })
 	createdAt: Date
 
-	@UpdateDateColumn()
+	@UpdateDateColumn({ type: 'timestamp' })
 	updatedAt: Date
+
+	@BeforeInsert()
+	async hashPassword() {
+		const salt = await bcrypt.genSalt(12)
+		this.password = await bcrypt.hash(this.password, salt)
+	}
 }
