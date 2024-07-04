@@ -1,16 +1,19 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm'
 import { ConfigService } from '@nestjs/config'
 import { DataSource, DataSourceOptions } from 'typeorm'
+import { DatabaseConstants } from '../utils'
+
+const configService = new ConfigService()
 
 export const ormConfig = (
 	configService: ConfigService
 ): TypeOrmModuleOptions => ({
 	type: 'postgres',
-	host: configService.get('DB_HOST'),
-	port: +configService.get('DB_PORT'),
-	username: configService.get('DB_USERNAME'),
-	password: configService.get('DB_PASSWORD'),
-	database: configService.get('DB_NAME'),
+	host: configService.get(DatabaseConstants.DB_HOST),
+	port: +configService.get(DatabaseConstants.DB_PORT),
+	username: configService.get(DatabaseConstants.DB_USERNAME),
+	password: configService.get(DatabaseConstants.DB_PASSWORD),
+	database: configService.get(DatabaseConstants.DB_NAME),
 	synchronize: false,
 	logging: true,
 	entities:
@@ -18,15 +21,13 @@ export const ormConfig = (
 	migrations: ['src/migration/**/*.js']
 })
 
-const configService = new ConfigService()
-
 export const dataSourceoptions: DataSourceOptions = {
 	type: 'postgres',
-	host: configService.get('DB_HOST'),
-	port: +configService.get('DB_PORT'),
-	username: configService.get('DB_USERNAME'),
-	password: configService.get('DB_PASSWORD'),
-	database: configService.get('DB_NAME'),
+	host: configService.get(DatabaseConstants.DB_HOST),
+	port: +configService.get(DatabaseConstants.DB_PORT),
+	username: configService.get(DatabaseConstants.DB_USERNAME),
+	password: configService.get(DatabaseConstants.DB_PASSWORD),
+	database: configService.get(DatabaseConstants.DB_NAME),
 	synchronize: false,
 	logging: true,
 	entities:

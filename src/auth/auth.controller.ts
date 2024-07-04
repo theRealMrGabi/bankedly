@@ -1,6 +1,8 @@
 import { Controller, Post, Body } from '@nestjs/common'
+
 import { AuthService } from './auth.service'
 import { SignupDto } from './dto/signup.dto'
+import { SigninDto } from './dto/signin.dto'
 
 @Controller({
 	path: 'auth',
@@ -16,5 +18,10 @@ export class AuthController {
 			message:
 				'Signup successful. Instructions on email verification has been sent to your email.'
 		}
+	}
+
+	@Post('/signin')
+	async signin(@Body() body: SigninDto) {
+		return this.authService.signin(body)
 	}
 }

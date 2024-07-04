@@ -7,6 +7,7 @@ import {
 	BeforeInsert
 } from 'typeorm'
 import * as bcrypt from 'bcryptjs'
+import { Exclude } from 'class-transformer'
 
 import { UserRoles, AccountStatus } from '../users.interface'
 
@@ -19,6 +20,7 @@ export class User {
 	username: string
 
 	@Column()
+	@Exclude()
 	password: string
 
 	@Column()
@@ -37,7 +39,7 @@ export class User {
 		type: 'boolean',
 		default: false
 	})
-	isEmailVerified: string
+	isEmailVerified: boolean
 
 	@Column({ type: 'timestamp', nullable: true, default: null })
 	emailVerifiedAt: Date
