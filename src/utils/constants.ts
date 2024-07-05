@@ -17,3 +17,7 @@ export const EmailConstants = {
 	MAILJET_API_KEY_PUBLIC: 'MAILJET_API_KEY_PUBLIC',
 	MAILJET_SECRET_KEY_PUBLIC: 'MAILJET_SECRET_KEY_PUBLIC'
 }
+
+export const EventsConstants = {
+	SEND_EMAIL: 'send.email'
+}

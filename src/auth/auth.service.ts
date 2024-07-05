@@ -4,35 +4,37 @@ import {
 	NotFoundException
 } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
+import { EventEmitter2 } from '@nestjs/event-emitter'
 import * as bcrypt from 'bcryptjs'
 import { instanceToPlain } from 'class-transformer'
 
 import { UsersService } from '../users/users.service'
 import { SignupDto } from './dto/signup.dto'
 import { SigninDto } from './dto/signin.dto'
-import { PostMarkService } from '../postmark.service'
+import { MailDto } from '../services/postmark.service'
 import { welcomeEmail } from '../helpers/email'
+import { EventsConstants } from '../utils'
 
 @Injectable()
 export class AuthService {
 	constructor(
 		private usersService: UsersService,
-		private jwtService: JwtService,
-		private postMarkService: PostMarkService
+		private eventEmitter: EventEmitter2,
+		private jwtService: JwtService
 	) {}
 
 	async signup(signupDto: SignupDto) {
 		const { email, firstname, lastname } = signupDto
 		await this.usersService.create(signupDto)
 
-		await this.postMarkService.sendEmail({
+		this.eventEmitter.emit(EventsConstants.SEND_EMAIL, {
 			emailSubject: 'Welcome to Bandkedly',
 			emailRecipient: email,
 			htmlContent: welcomeEmail({
 				recipientName: `${lastname} ${firstname}`,
 				verificationLink: 'https://verificiation-link-meant-to-be-here'
 			})
-		})
+		} satisfies MailDto)
 
 		return {
 			message:

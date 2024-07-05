@@ -2,7 +2,7 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import * as postmark from 'postmark'
 
-import { EmailConstants } from './utils'
+import { EmailConstants } from '../utils'
 
 export interface MailDto {
 	emailRecipient: string
@@ -34,7 +34,6 @@ export class PostMarkService {
 				HtmlBody: htmlContent
 			})
 		} catch (error) {
-			console.log('🚀 ==>email error:', error.message)
 			throw new InternalServerErrorException(
 				`Failed to send email: ${error.message}`
 			)

@@ -6,7 +6,8 @@ import { AuthService } from './auth.service'
 import { AuthController } from './auth.controller'
 import { UsersModule } from '../users/users.module'
 import { AuthConstants } from '../utils'
-import { PostMarkService } from '../postmark.service'
+import { PostMarkService } from '../services/postmark.service'
+import { EmailEventHandlerService } from '../services/email-event-handler.service'
 
 @Module({
 	imports: [
@@ -23,6 +24,6 @@ import { PostMarkService } from '../postmark.service'
 		})
 	],
 	controllers: [AuthController],
-	providers: [AuthService, PostMarkService]
+	providers: [AuthService, PostMarkService, EmailEventHandlerService]
 })
 export class AuthModule {}
