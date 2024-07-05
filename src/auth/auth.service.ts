@@ -1,23 +1,28 @@
 import {
 	BadRequestException,
 	Injectable,
-	NotFoundException
+	NotFoundException,
+	Inject
 } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { EventEmitter2 } from '@nestjs/event-emitter'
 import * as bcrypt from 'bcryptjs'
 import { instanceToPlain } from 'class-transformer'
+import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager'
 
 import { UsersService } from '../users/users.service'
 import { SignupDto } from './dto/signup.dto'
 import { SigninDto } from './dto/signin.dto'
+import { VerifyOtpDto } from './dto/verifyEmail.dto'
 import { MailDto } from '../services/postmark.service'
 import { welcomeEmail } from '../helpers/email'
-import { EventsConstants } from '../utils'
+import { EventsConstants, RedisKeys } from '../utils'
+import { generateOTPCode } from './../utils/index'
 
 @Injectable()
 export class AuthService {
 	constructor(
+		@Inject(CACHE_MANAGER) private cacheManager: Cache,
 		private usersService: UsersService,
 		private eventEmitter: EventEmitter2,
 		private jwtService: JwtService
@@ -27,12 +32,19 @@ export class AuthService {
 		const { email, firstname, lastname } = signupDto
 		await this.usersService.create(signupDto)
 
+		const activationCode = generateOTPCode()
+		await this.cacheManager.set(
+			`${RedisKeys.EMAIL_VALIDATION}_${activationCode}`,
+			email.toLowerCase(),
+			600000
+		) //ttl is 10mins
+
 		this.eventEmitter.emit(EventsConstants.SEND_EMAIL, {
 			emailSubject: 'Welcome to Bandkedly',
 			emailRecipient: email,
 			htmlContent: welcomeEmail({
 				recipientName: `${lastname} ${firstname}`,
-				verificationLink: 'https://verificiation-link-meant-to-be-here'
+				otpCode: activationCode
 			})
 		} satisfies MailDto)
 
@@ -45,7 +57,7 @@ export class AuthService {
 	async signin(signinDto: SigninDto) {
 		const { email, password } = signinDto
 
-		const user = await this.usersService.findByEmail(email)
+		const user = await this.usersService.findByEmail(email.toLowerCase())
 
 		if (!user) {
 			throw new NotFoundException('User not found')
@@ -67,5 +79,32 @@ export class AuthService {
 			access_token: await this.jwtService.signAsync(payload),
 			...instanceToPlain(user)
 		}
+	}
+
+	async activateAccount(verifyOtpDto: VerifyOtpDto) {
+		const { otpCode } = verifyOtpDto
+		const redisKey = `${RedisKeys.EMAIL_VALIDATION}_${otpCode}`
+
+		const email = (await this.cacheManager.get<string>(redisKey))?.toLowerCase()
+
+		if (!email) {
+			throw new BadRequestException('Invalid OTP')
+		}
+
+		const user = await this.usersService.findByEmail(email)
+		if (!user) {
+			throw new BadRequestException('Invalid OTP')
+		}
+
+		await this.usersService.updateUser({
+			userId: user.id,
+			payload: {
+				isEmailVerified: true,
+				emailVerifiedAt: new Date()
+			}
+		})
+		await this.cacheManager.del(redisKey)
+
+		return { message: 'Account activated successfully' }
 	}
 }

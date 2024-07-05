@@ -5,7 +5,7 @@ import { JwtModule } from '@nestjs/jwt'
 import { AuthService } from './auth.service'
 import { AuthController } from './auth.controller'
 import { UsersModule } from '../users/users.module'
-import { AuthConstants } from '../utils'
+import { EnvKeys } from '../utils'
 import { PostMarkService } from '../services/postmark.service'
 import { EmailEventHandlerService } from '../services/email-event-handler.service'
 
@@ -16,9 +16,10 @@ import { EmailEventHandlerService } from '../services/email-event-handler.servic
 			imports: [ConfigModule],
 			inject: [ConfigService],
 			useFactory: async (configService: ConfigService) => ({
-				secret: configService.get(AuthConstants.JWT_TOKEN),
+				secret: configService.get<string>(EnvKeys.JWT_TOKEN),
 				signOptions: {
-					expiresIn: '1h'
+					expiresIn: '1h',
+					issuer: configService.get<string>(EnvKeys.JWT_ISSUER)
 				}
 			})
 		})

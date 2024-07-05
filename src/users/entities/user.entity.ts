@@ -4,7 +4,8 @@ import {
 	PrimaryGeneratedColumn,
 	CreateDateColumn,
 	UpdateDateColumn,
-	BeforeInsert
+	BeforeInsert,
+	BeforeUpdate
 } from 'typeorm'
 import * as bcrypt from 'bcryptjs'
 import { Exclude } from 'class-transformer'
@@ -63,6 +64,14 @@ export class User {
 
 	@UpdateDateColumn({ type: 'timestamp' })
 	updatedAt: Date
+
+	@BeforeInsert()
+	@BeforeUpdate()
+	lowercaseEmail() {
+		if (this.email) {
+			this.email = this.email.toLowerCase()
+		}
+	}
 
 	@BeforeInsert()
 	async hashPassword() {

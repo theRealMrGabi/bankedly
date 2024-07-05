@@ -58,4 +58,18 @@ export class UsersService {
 		if (!user) throw new NotFoundException('User not found')
 		return await this.userRepository.softDelete(id)
 	}
+
+	async updateUser({
+		userId,
+		payload
+	}: {
+		userId: string
+		payload: Partial<User>
+	}) {
+		const user = await this.findById(userId)
+		if (!user) throw new NotFoundException('User not found')
+
+		Object.assign(user, payload)
+		return this.userRepository.save(user)
+	}
 }
