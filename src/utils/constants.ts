@@ -14,7 +14,8 @@ export const EnvKeys = {
 }
 
 export const RedisKeys = {
-	EMAIL_VALIDATION: 'EMAIL_VALIDATION'
+	EMAIL_VALIDATION: 'EMAIL_VALIDATION',
+	RESET_PASSWORD: 'RESET_PASSWORD'
 }
 
 export const EventsConstants = {

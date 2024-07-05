@@ -37,7 +37,7 @@ export const welcomeEmail = ({ recipientName, otpCode }: WelcomeEmailDto) => {
   </body>`
 }
 
-export const ForgotPasswordEmail = ({
+export const forgotPasswordEmail = ({
 	recipientName,
 	otpCode
 }: ForgotPasswordEmailDto) => {

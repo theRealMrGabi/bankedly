@@ -2,7 +2,8 @@ import {
 	BadRequestException,
 	Injectable,
 	NotFoundException,
-	Inject
+	Inject,
+	ForbiddenException
 } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { EventEmitter2 } from '@nestjs/event-emitter'
@@ -11,13 +12,16 @@ import { instanceToPlain } from 'class-transformer'
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager'
 
 import { UsersService } from '../users/users.service'
+import { MailDto } from '../services/postmark.service'
+import { welcomeEmail, forgotPasswordEmail } from '../helpers/email'
+import { EventsConstants, RedisKeys } from '../utils'
+import { generateOTPCode } from './../utils/index'
+
 import { SignupDto } from './dto/signup.dto'
 import { SigninDto } from './dto/signin.dto'
 import { VerifyOtpDto } from './dto/verifyEmail.dto'
-import { MailDto } from '../services/postmark.service'
-import { welcomeEmail } from '../helpers/email'
-import { EventsConstants, RedisKeys } from '../utils'
-import { generateOTPCode } from './../utils/index'
+import { EmailDto } from './dto/email.dto'
+import { ResetPasswordDto } from './dto/resetPassword.dto'
 
 @Injectable()
 export class AuthService {
@@ -106,5 +110,88 @@ export class AuthService {
 		await this.cacheManager.del(redisKey)
 
 		return { message: 'Account activated successfully' }
+	}
+
+	async forgotPassword(forgotPasswordDto: EmailDto) {
+		const email = forgotPasswordDto.email.toLowerCase()
+
+		const user = await this.usersService.findByEmail(email)
+
+		if (!user) {
+			throw new NotFoundException('User not found')
+		}
+
+		if (!['active', 'inactive'].includes(user.accountStatus)) {
+			throw new ForbiddenException(
+				'Your access to the platform has been revoked, contact admin'
+			)
+		}
+
+		const resetPasswordCode = generateOTPCode()
+		await this.cacheManager.set(
+			`${resetPasswordCode}_${RedisKeys.RESET_PASSWORD}`,
+			user.email
+		)
+
+		this.eventEmitter.emit(EventsConstants.SEND_EMAIL, {
+			emailSubject: 'Password Change Request - Bankedly',
+			emailRecipient: email,
+			htmlContent: forgotPasswordEmail({
+				recipientName: `${user.lastname} ${user.firstname}`,
+				otpCode: resetPasswordCode
+			})
+		} satisfies MailDto)
+
+		return {
+			message:
+				'Instructions on how to reset your password has been sent to your email.'
+		}
+	}
+
+	async resetPassword({
+		emailDto,
+		resetPasswordDto
+	}: {
+		emailDto: EmailDto
+		resetPasswordDto: ResetPasswordDto
+	}) {
+		console.log('🚀 ==> emailDto:', emailDto)
+		const email = emailDto.email
+		const { password, otpCode } = resetPasswordDto
+
+		const redisKey = `${otpCode}_${RedisKeys.RESET_PASSWORD}`
+
+		const cacheEmail = await this.cacheManager.get<string>(redisKey)
+
+		if (!cacheEmail) {
+			throw new BadRequestException('Invalid OTP code')
+		}
+
+		const user = await this.usersService.findByEmail(cacheEmail)
+
+		if (cacheEmail !== email) {
+			throw new BadRequestException('Invalid OTP code')
+		}
+
+		if (!user) {
+			throw new NotFoundException('User not found')
+		}
+
+		if (!['active', 'inactive'].includes(user.accountStatus)) {
+			throw new ForbiddenException(
+				'Your access to the platform has been revoked, contact admin'
+			)
+		}
+
+		await this.usersService.updateUser({
+			userId: user.id,
+			payload: {
+				password
+			}
+		})
+
+		await this.cacheManager.del(redisKey)
+
+		return { message: 'Password successfully changed' }
 	}
 }
