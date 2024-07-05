@@ -13,15 +13,11 @@ export class AuthController {
 
 	@Post('/signup')
 	async signupUser(@Body() body: SignupDto) {
-		await this.authService.signup(body)
-		return {
-			message:
-				'Signup successful. Instructions on email verification has been sent to your email.'
-		}
+		return await this.authService.signup(body)
 	}
 
 	@Post('/signin')
 	async signin(@Body() body: SigninDto) {
-		return this.authService.signin(body)
+		return await this.authService.signin(body)
 	}
 }

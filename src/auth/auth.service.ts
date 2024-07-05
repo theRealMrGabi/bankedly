@@ -10,16 +10,34 @@ import { instanceToPlain } from 'class-transformer'
 import { UsersService } from '../users/users.service'
 import { SignupDto } from './dto/signup.dto'
 import { SigninDto } from './dto/signin.dto'
+import { PostMarkService } from '../postmark.service'
+import { welcomeEmail } from '../helpers/email'
 
 @Injectable()
 export class AuthService {
 	constructor(
 		private usersService: UsersService,
-		private jwtService: JwtService
+		private jwtService: JwtService,
+		private postMarkService: PostMarkService
 	) {}
 
-	async signup(sigupDto: SignupDto) {
-		return this.usersService.create(sigupDto)
+	async signup(signupDto: SignupDto) {
+		const { email, firstname, lastname } = signupDto
+		await this.usersService.create(signupDto)
+
+		await this.postMarkService.sendEmail({
+			emailSubject: 'Welcome to Bandkedly',
+			emailRecipient: email,
+			htmlContent: welcomeEmail({
+				recipientName: `${lastname} ${firstname}`,
+				verificationLink: 'https://verificiation-link-meant-to-be-here'
+			})
+		})
+
+		return {
+			message:
+				'Signup successful. Instructions on email verification has been sent to your email.'
+		}
 	}
 
 	async signin(signinDto: SigninDto) {
