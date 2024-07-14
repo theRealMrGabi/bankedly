@@ -129,8 +129,8 @@ export class AuthService {
 
 		const resetPasswordCode = generateOTPCode()
 		await this.cacheManager.set(
-			`${resetPasswordCode}_${RedisKeys.RESET_PASSWORD}`,
-			user.email
+			`${user.email}_${RedisKeys.RESET_PASSWORD}`,
+			resetPasswordCode
 		)
 
 		this.eventEmitter.emit(EventsConstants.SEND_EMAIL, {
@@ -155,26 +155,25 @@ export class AuthService {
 		emailDto: EmailDto
 		resetPasswordDto: ResetPasswordDto
 	}) {
-		console.log('🚀 ==> emailDto:', emailDto)
 		const email = emailDto.email
 		const { password, otpCode } = resetPasswordDto
 
-		const redisKey = `${otpCode}_${RedisKeys.RESET_PASSWORD}`
+		const redisKey = `${email}_${RedisKeys.RESET_PASSWORD}`
 
-		const cacheEmail = await this.cacheManager.get<string>(redisKey)
+		const cacheOtpCode = await this.cacheManager.get<string>(redisKey)
 
-		if (!cacheEmail) {
+		if (!cacheOtpCode) {
 			throw new BadRequestException('Invalid OTP code')
 		}
 
-		const user = await this.usersService.findByEmail(cacheEmail)
-
-		if (cacheEmail !== email) {
-			throw new BadRequestException('Invalid OTP code')
-		}
+		const user = await this.usersService.findByEmail(email)
 
 		if (!user) {
 			throw new NotFoundException('User not found')
+		}
+
+		if (cacheOtpCode !== otpCode) {
+			throw new BadRequestException('Invalid OTP code')
 		}
 
 		if (!['active', 'inactive'].includes(user.accountStatus)) {
