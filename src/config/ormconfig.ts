@@ -4,6 +4,7 @@ import { DataSource, DataSourceOptions } from 'typeorm'
 import { EnvKeys } from '../utils'
 
 const configService = new ConfigService()
+const isTestEnvironment = process.env.NODE_ENV === 'test'
 
 export const ormConfig = (
 	configService: ConfigService
@@ -16,8 +17,7 @@ export const ormConfig = (
 	database: configService.get(EnvKeys.DB_NAME),
 	synchronize: false,
 	logging: true,
-	entities:
-		process.env.NODE_ENV === 'test' ? ['**/*.entity.ts'] : ['**/*.entity.js'],
+	entities: isTestEnvironment ? ['**/*.entity.ts'] : ['**/*.entity.js'],
 	migrations: ['src/migration/**/*.js']
 })
 
@@ -30,8 +30,7 @@ export const dataSourceoptions: DataSourceOptions = {
 	database: configService.get(EnvKeys.DB_NAME),
 	synchronize: false,
 	logging: true,
-	entities:
-		process.env.NODE_ENV === 'test' ? ['**/*.entity.ts'] : ['**/*.entity.js'],
+	entities: isTestEnvironment ? ['**/*.entity.ts'] : ['**/*.entity.js'],
 	migrations: ['src/migration/**/*.js']
 } satisfies TypeOrmModuleOptions
 
