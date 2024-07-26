@@ -64,13 +64,13 @@ export class AuthService {
 		const user = await this.usersService.findByEmail(email.toLowerCase())
 
 		if (!user) {
-			throw new NotFoundException('User not found')
+			throw new BadRequestException('Invalid credentials')
 		}
 
 		const isValidPassword = await bcrypt.compare(password, user.password)
 
 		if (!isValidPassword) {
-			throw new BadRequestException('Invalid login credential')
+			throw new BadRequestException('Invalid credentials')
 		}
 
 		if (!user.isEmailVerified) {

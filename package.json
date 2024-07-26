@@ -24,7 +24,9 @@
 		"typeorm": "typeorm-ts-node-commonjs",
 		"migration:create": "typeorm migration:create",
 		"migration:run": "typeorm migration:run",
-		"migration:run:ts-node": "typeorm-ts-node-commonjs migration:run"
+		"migration:run:ts-node": "typeorm-ts-node-commonjs migration:run",
+		"seed:run": "cross-env NODE_ENV=development ts-node ./node_modules/typeorm-extension/bin/cli.cjs seed:run  -d ./dist/src/config/ormconfig.js",
+		"seed:create": "cross-env NODE_ENV=development ts-node ./node_modules/typeorm-extension/bin/cli.cjs seed:create"
 	},
 	"dependencies": {
 		"@nestjs/cache-manager": "^2.2.2",
@@ -45,7 +47,8 @@
 		"postmark": "^4.0.4",
 		"reflect-metadata": "^0.2.0",
 		"rxjs": "^7.8.1",
-		"typeorm": "^0.3.20"
+		"typeorm": "^0.3.20",
+		"typeorm-extension": "^3.5.1"
 	},
 	"devDependencies": {
 		"@nestjs/cli": "^10.0.0",

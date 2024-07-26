@@ -25,11 +25,18 @@ import { setupTestDataSource } from '../test/testDatabase.setup'
 		TypeOrmModule.forRootAsync({
 			imports: [ConfigModule],
 			inject: [ConfigService],
-			useFactory: (configService: ConfigService) => ormConfig(configService),
+			// useFactory: (configService: ConfigService) => ormConfig(configService),
+			useFactory: () => ormConfig(),
 			dataSourceFactory: async (options) => {
 				if (process.env.NODE_ENV !== 'test') {
-					const dataSource = await new DataSource(options).initialize()
-					return dataSource
+					try {
+						const dataSource = await new DataSource(options).initialize()
+						console.log('Database connected successfully')
+						return dataSource
+					} catch (error) {
+						console.error('Error connecting to database')
+						throw error
+					}
 				} else {
 					return setupTestDataSource()
 				}
