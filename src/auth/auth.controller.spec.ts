@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import * as bcrypt from 'bcryptjs'
-import { randNumber } from '@ngneat/falso'
+import { randEmail, randNumber } from '@ngneat/falso'
 
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
@@ -88,7 +88,8 @@ describe('AuthController', () => {
 
 	it('should activate an account', async () => {
 		const verifyOtpDto = {
-			otpCode: randNumber({ length: 6 }).toString()
+			otpCode: randNumber({ length: 6 }).toString(),
+			email: randEmail()
 		} satisfies VerifyOtpDto
 
 		const mockActivateResponse = { message: 'Account activated successfully' }

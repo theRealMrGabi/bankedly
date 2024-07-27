@@ -1,4 +1,4 @@
-import { ormTestConfig } from '../src/config/ormconfig.test.setup'
+import { ormConfig } from '../src/config/ormconfig'
 import { newDb, DataType } from 'pg-mem'
 import { DataSource } from 'typeorm'
 
@@ -49,7 +49,7 @@ export const setupTestDataSource = async () => {
 
 	try {
 		const ds: DataSource =
-			await db.adapters.createTypeormDataSource(ormTestConfig)
+			await db.adapters.createTypeormDataSource(ormConfig())
 		await ds.initialize()
 		await ds.synchronize()
 
