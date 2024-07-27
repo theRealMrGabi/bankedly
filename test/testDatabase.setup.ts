@@ -52,6 +52,7 @@ export const setupTestDataSource = async () => {
 			await db.adapters.createTypeormDataSource(ormTestConfig)
 		await ds.initialize()
 		await ds.synchronize()
+
 		return ds
 	} catch (error) {
 		console.error('Error setting up data source:', error)

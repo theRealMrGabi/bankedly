@@ -1,22 +1,26 @@
 import { setSeederFactory } from 'typeorm-extension'
-import { User } from '../../users/entities/user.entity'
 import {
 	randFirstName,
 	randLastName,
-	randPhoneNumber,
 	randEmail,
 	randUserName
 } from '@ngneat/falso'
+
+import { User } from '../../users/entities/user.entity'
+import { generateNigerianPhoneNumber } from '../../utils'
 
 export default setSeederFactory(User, () => {
 	const user = new User()
 
 	user.firstname = randFirstName()
 	user.lastname = randLastName()
-	user.phoneNumber = randPhoneNumber({ countryCode: 'NG' })
+	user.phoneNumber = generateNigerianPhoneNumber()
 	user.email = randEmail()
 	user.password = 'r@ndom!?P@ssword123!'
-	user.username = randUserName()
+	user.username = randUserName({ withAccents: false }).replace(
+		/[^a-zA-Z0-9]/g,
+		''
+	)
 
 	return user
 })

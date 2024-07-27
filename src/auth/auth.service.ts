@@ -38,8 +38,8 @@ export class AuthService {
 
 		const activationCode = generateOTPCode()
 		await this.cacheManager.set(
-			`${RedisKeys.EMAIL_VALIDATION}_${activationCode}`,
-			email.toLowerCase(),
+			`${RedisKeys.EMAIL_VALIDATION}_${email.toLowerCase()}`,
+			activationCode,
 			600000
 		) //ttl is 10mins
 
@@ -77,27 +77,31 @@ export class AuthService {
 			throw new BadRequestException('Email address verification is required')
 		}
 
-		const payload = { sub: user.id, email: user.email }
-
 		return {
-			access_token: await this.jwtService.signAsync(payload),
+			access_token: await this.jwtService.signAsync({
+				id: user.id
+			}),
 			...instanceToPlain(user)
 		}
 	}
 
 	async activateAccount(verifyOtpDto: VerifyOtpDto) {
-		const { otpCode } = verifyOtpDto
-		const redisKey = `${RedisKeys.EMAIL_VALIDATION}_${otpCode}`
+		const { otpCode, email } = verifyOtpDto
+		const redisKey = `${RedisKeys.EMAIL_VALIDATION}_${email.toLowerCase()}`
 
-		const email = (await this.cacheManager.get<string>(redisKey))?.toLowerCase()
+		const cacheOtpCode = await this.cacheManager.get<string>(redisKey)
 
-		if (!email) {
+		if (!cacheOtpCode) {
 			throw new BadRequestException('Invalid OTP')
 		}
 
 		const user = await this.usersService.findByEmail(email)
 		if (!user) {
 			throw new BadRequestException('Invalid OTP')
+		}
+
+		if (cacheOtpCode !== otpCode) {
+			throw new BadRequestException('Invalid OTP code')
 		}
 
 		await this.usersService.updateUser({

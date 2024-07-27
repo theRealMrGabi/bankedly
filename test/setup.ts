@@ -6,6 +6,14 @@ import { buildTestingModule, getDataSource } from '../src/app.test.module'
 let app: INestApplication
 let dataSource: DataSource
 
+async function truncateAllTables(dataSource: DataSource) {
+	const entities = dataSource.entityMetadatas
+	for (const entity of entities) {
+		const repository = dataSource.getRepository(entity.name)
+		await repository.query(`TRUNCATE "${entity.tableName}" CASCADE;`)
+	}
+}
+
 beforeEach(async () => {
 	try {
 		const moduleFixture = await buildTestingModule()
@@ -25,9 +33,14 @@ beforeEach(async () => {
 
 afterEach(async () => {
 	try {
+		if (dataSource && dataSource.isInitialized) {
+			await truncateAllTables(dataSource)
+		}
+
 		if (app) {
 			await app.close()
 		}
+
 		if (dataSource && dataSource.isInitialized) {
 			await dataSource.destroy()
 		}

@@ -1,7 +1,8 @@
 import {
 	Injectable,
 	ConflictException,
-	NotFoundException
+	NotFoundException,
+	InternalServerErrorException
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -24,7 +25,7 @@ export class UsersService {
 
 		if (userExists) {
 			throw new ConflictException(
-				'One or more of these details (email, username or phonenumber) is already in use. Please try different details'
+				'Unique email, username or phonenumber must be used. Please try different details'
 			)
 		}
 
@@ -70,6 +71,10 @@ export class UsersService {
 		if (!user) throw new NotFoundException('User not found')
 
 		Object.assign(user, payload)
-		return this.userRepository.save(user)
+		try {
+			return await this.userRepository.save(user)
+		} catch (error) {
+			throw new InternalServerErrorException('Error updating user')
+		}
 	}
 }

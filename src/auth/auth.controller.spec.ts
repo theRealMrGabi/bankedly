@@ -46,8 +46,10 @@ describe('AuthController', () => {
 			updatedAt: new Date(),
 			id: '1',
 			lowercaseEmail: jest.fn(),
-			hashPassword: jest.fn()
-		}
+			hashPassword: jest.fn(),
+			loadPassword: jest.fn(),
+			previousPassword: hashedPassword
+		} as unknown as User
 
 		// Mock the user creation
 		jest.spyOn(usersService, 'create').mockResolvedValue(mockUser)
