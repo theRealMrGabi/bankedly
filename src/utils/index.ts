@@ -1,5 +1,5 @@
 import * as crypto from 'crypto'
-import { rand } from '@ngneat/falso'
+import { rand, randNumber } from '@ngneat/falso'
 
 export const generateSecureKey = () => crypto.randomBytes(32).toString('hex')
 
@@ -28,5 +28,10 @@ export const generateNigerianPhoneNumber = (): string => {
 	return `+234${prefix}${subscriberNumber}`
 }
 
+export const generateRandomNumber = (length: number = 6): string => {
+	const min = Math.pow(10, length - 1)
+	const max = Math.pow(10, length) - 1
+	return randNumber({ min, max }).toString()
+}
+
 export * from './constants'
-export { generateOTPCode } from './generateOTPCode'

@@ -2,11 +2,13 @@ import { JwtService } from '@nestjs/jwt'
 import { EventEmitter2 } from '@nestjs/event-emitter'
 
 import { UsersService } from '../../src/users/users.service'
+import { OtpService } from '../../src/services/otp.service'
 import {
 	jwtServiceMock,
 	cacheManagerMock,
 	usersServiceMock,
-	eventEmitterMock
+	eventEmitterMock,
+	OtpServiceMock
 } from './mocks.setup'
 
 export const authMockProviders = [
@@ -25,5 +27,9 @@ export const authMockProviders = [
 	{
 		provide: EventEmitter2,
 		useValue: eventEmitterMock
+	},
+	{
+		provide: OtpService,
+		useValue: OtpServiceMock
 	}
 ]

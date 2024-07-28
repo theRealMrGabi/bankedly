@@ -13,9 +13,9 @@ import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager'
 
 import { UsersService } from '../users/users.service'
 import { MailDto } from '../services/postmark.service'
+import { OtpService } from '../services/otp.service'
 import { welcomeEmail, forgotPasswordEmail } from '../helpers/email'
 import { EventsConstants, RedisKeys } from '../utils'
-import { generateOTPCode } from './../utils/index'
 
 import { SignupDto } from './dto/signup.dto'
 import { SigninDto } from './dto/signin.dto'
@@ -27,6 +27,7 @@ import { ResetPasswordDto } from './dto/resetPassword.dto'
 export class AuthService {
 	constructor(
 		@Inject(CACHE_MANAGER) private cacheManager: Cache,
+		private otpService: OtpService,
 		private usersService: UsersService,
 		private eventEmitter: EventEmitter2,
 		private jwtService: JwtService
@@ -36,7 +37,7 @@ export class AuthService {
 		const { email, firstname, lastname } = signupDto
 		await this.usersService.create(signupDto)
 
-		const activationCode = generateOTPCode()
+		const activationCode = this.otpService.generateOtp()
 		await this.cacheManager.set(
 			`${RedisKeys.EMAIL_VALIDATION}_${email.toLowerCase()}`,
 			activationCode,
@@ -131,7 +132,7 @@ export class AuthService {
 			)
 		}
 
-		const resetPasswordCode = generateOTPCode()
+		const resetPasswordCode = this.otpService.generateOtp()
 		await this.cacheManager.set(
 			`${user.email}_${RedisKeys.RESET_PASSWORD}`,
 			resetPasswordCode

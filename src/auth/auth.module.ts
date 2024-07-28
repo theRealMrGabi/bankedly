@@ -8,6 +8,7 @@ import { UsersModule } from '../users/users.module'
 import { EnvKeys } from '../utils'
 import { PostMarkService } from '../services/postmark.service'
 import { EmailEventHandlerService } from '../services/email-event-handler.service'
+import { OtpService } from '../services/otp.service'
 
 @Module({
 	imports: [
@@ -25,6 +26,11 @@ import { EmailEventHandlerService } from '../services/email-event-handler.servic
 		})
 	],
 	controllers: [AuthController],
-	providers: [AuthService, PostMarkService, EmailEventHandlerService]
+	providers: [
+		AuthService,
+		PostMarkService,
+		EmailEventHandlerService,
+		OtpService
+	]
 })
 export class AuthModule {}

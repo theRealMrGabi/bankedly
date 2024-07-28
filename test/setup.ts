@@ -1,10 +1,16 @@
 import { INestApplication } from '@nestjs/common'
 import { DataSource } from 'typeorm'
 
-import { buildTestingModule, getDataSource } from '../src/app.test.module'
+import {
+	buildTestingModule,
+	getDataSource,
+	getMockCache
+} from '../src/app.test.module'
+import { MockCache } from './mocks/cacheManager.mock'
 
 let app: INestApplication
 let dataSource: DataSource
+let mockCache: MockCache
 
 async function truncateAllTables(dataSource: DataSource) {
 	const entities = dataSource.entityMetadatas
@@ -25,6 +31,7 @@ beforeEach(async () => {
 
 		app = moduleFixture.createNestApplication()
 		await app.init()
+		mockCache = getMockCache()
 	} catch (error) {
 		console.error('Error in beforeAll:', error)
 		throw error
@@ -39,6 +46,7 @@ afterEach(async () => {
 
 		if (app) {
 			await app.close()
+			mockCache.clear()
 		}
 
 		if (dataSource && dataSource.isInitialized) {

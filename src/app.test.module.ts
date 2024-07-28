@@ -4,13 +4,25 @@ import { DataSource } from 'typeorm'
 
 import { AppModule } from './app.module'
 import { setupTestDataSource } from '../test/testDatabase.setup'
+import { MockCache } from '../test/mocks/cacheManager.mock'
+import { OtpService } from '../src/services/otp.service'
+import { generateRandomNumber } from './utils'
 
 let testingModule: TestingModule
 let testDataSource: DataSource
+let mockedOtpCode: string
+let mockCache: MockCache
 
 export const buildTestingModule = async () => {
 	if (testingModule) {
 		return testingModule
+	}
+
+	mockedOtpCode = generateRandomNumber()
+	mockCache = new MockCache()
+
+	const OtpServiceMock = {
+		generateOtp: jest.fn().mockReturnValue(mockedOtpCode)
 	}
 
 	try {
@@ -26,6 +38,10 @@ export const buildTestingModule = async () => {
 		})
 			.overrideProvider(DataSource)
 			.useValue(testDataSource)
+			.overrideProvider('CACHE_MANAGER')
+			.useValue(mockCache)
+			.overrideProvider(OtpService)
+			.useValue(OtpServiceMock)
 			.compile()
 
 		return testingModule
@@ -36,3 +52,5 @@ export const buildTestingModule = async () => {
 }
 
 export const getDataSource = () => testDataSource
+export const getMockedOtpCode = () => mockedOtpCode
+export const getMockCache = () => mockCache

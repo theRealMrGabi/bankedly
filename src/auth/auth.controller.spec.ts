@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import * as bcrypt from 'bcryptjs'
-import { randEmail, randNumber } from '@ngneat/falso'
+import { randEmail } from '@ngneat/falso'
 
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
@@ -14,6 +14,7 @@ import { User } from '../users/entities/user.entity'
 
 import { authMockProviders } from '../../test/mocks/auth.mocks'
 import { SignupPayload, SigninPayload } from '../../test/helpers/auth'
+import { generateRandomNumber } from '../utils'
 
 describe('AuthController', () => {
 	let controller: AuthController
@@ -88,7 +89,7 @@ describe('AuthController', () => {
 
 	it('should activate an account', async () => {
 		const verifyOtpDto = {
-			otpCode: randNumber({ length: 6 }).toString(),
+			otpCode: generateRandomNumber(),
 			email: randEmail()
 		} satisfies VerifyOtpDto
 
@@ -123,7 +124,7 @@ describe('AuthController', () => {
 		const emailDto = { email: SignupPayload.email } satisfies EmailDto
 		const resetPasswordDto = {
 			password: 'newPassword123',
-			otpCode: randNumber({ length: 6 }).toString()
+			otpCode: generateRandomNumber()
 		} satisfies ResetPasswordDto
 
 		const mockResetPasswordResponse = {
