@@ -2,8 +2,7 @@ import { Module, ValidationPipe } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { APP_PIPE, APP_INTERCEPTOR } from '@nestjs/core'
 import { EventEmitterModule } from '@nestjs/event-emitter'
-import { CacheModule, CacheInterceptor } from '@nestjs/cache-manager'
-
+import { CacheModule } from '@nestjs/cache-manager'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { DataSource } from 'typeorm'
 
@@ -14,6 +13,7 @@ import { ormConfig } from './config/ormconfig'
 import { RedisConfig } from './config/redis'
 import { AuthModule } from './auth/auth.module'
 import { setupTestDataSource } from '../test/testDatabase.setup'
+import { CustomCacheInterceptor } from './interceptors/CacheInterceptor'
 
 @Module({
 	imports: [
@@ -31,10 +31,10 @@ import { setupTestDataSource } from '../test/testDatabase.setup'
 				if (process.env.NODE_ENV !== 'test') {
 					try {
 						const dataSource = await new DataSource(options).initialize()
-						console.log('Database connected successfully')
+						console.log('🍀 Database connected successfully 🍀')
 						return dataSource
 					} catch (error) {
-						console.error('Error connecting to database')
+						console.error('🚨 Error connecting to database 🚨')
 						throw error
 					}
 				} else {
@@ -52,12 +52,14 @@ import { setupTestDataSource } from '../test/testDatabase.setup'
 		{
 			provide: APP_PIPE,
 			useValue: new ValidationPipe({
-				whitelist: true
+				whitelist: true,
+				transform: true
 			})
 		},
 		{
 			provide: APP_INTERCEPTOR,
-			useClass: CacheInterceptor
+			// useClass: CacheInterceptor
+			useClass: CustomCacheInterceptor
 		}
 	]
 })

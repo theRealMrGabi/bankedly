@@ -41,8 +41,8 @@ export class AuthService {
 		await this.cacheManager.set(
 			`${RedisKeys.EMAIL_VALIDATION}_${email.toLowerCase()}`,
 			activationCode,
-			600000
-		) //ttl is 10mins
+			RedisKeys.CACHE_TTL
+		)
 
 		this.eventEmitter.emit(EventsConstants.SEND_EMAIL, {
 			emailSubject: 'Welcome to Bandkedly',
@@ -135,7 +135,8 @@ export class AuthService {
 		const resetPasswordCode = this.otpService.generateOtp()
 		await this.cacheManager.set(
 			`${user.email}_${RedisKeys.RESET_PASSWORD}`,
-			resetPasswordCode
+			resetPasswordCode,
+			RedisKeys.CACHE_TTL
 		)
 
 		this.eventEmitter.emit(EventsConstants.SEND_EMAIL, {

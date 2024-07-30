@@ -5,7 +5,8 @@ import {
 	InternalServerErrorException
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Brackets, Repository } from 'typeorm'
+import { instanceToPlain } from 'class-transformer'
 
 import { SignupDto } from '../auth/dto/signup.dto'
 import { User } from './entities/user.entity'
@@ -49,8 +50,70 @@ export class UsersService {
 		})
 	}
 
-	async find(email: string) {
-		return await this.userRepository.find({ where: { email } })
+	async findUsers({
+		filters = {},
+		page = 1,
+		limit = 20,
+		sort = 'createdAt',
+		order = 'DESC',
+		keyword
+	}: {
+		filters?: Partial<Omit<User, 'page' | 'limit' | 'sort' | 'order'>>
+		page?: number
+		limit?: number
+		sort?: keyof User
+		order?: 'ASC' | 'DESC'
+		keyword?: string
+	}) {
+		const searchKeyword = keyword?.toLowerCase()
+		const queryBuilder = this.userRepository.createQueryBuilder('user')
+
+		Object.keys(filters).forEach((key) => {
+			queryBuilder.andWhere(`user.${key} = :${key}`, {
+				[key]: filters[key]
+			})
+		})
+
+		if (searchKeyword) {
+			queryBuilder.andWhere(
+				new Brackets((qb) => {
+					qb.where('LOWER(user.username) LIKE :keyword', {
+						keyword: `%${searchKeyword}%`
+					})
+						.orWhere('LOWER(user.firstname) LIKE :keyword', {
+							keyword: `%${searchKeyword}%`
+						})
+						.orWhere('LOWER(user.lastname) LIKE :keyword', {
+							keyword: `%${searchKeyword}%`
+						})
+						.orWhere('LOWER(user.email) LIKE :keyword', {
+							keyword: `%${searchKeyword}%`
+						})
+						.orWhere('LOWER(user.phoneNumber) LIKE :keyword', {
+							keyword: `%${searchKeyword}%`
+						})
+				})
+			)
+		}
+
+		queryBuilder.orderBy(`user.${sort}`, order)
+
+		const total_count = await queryBuilder.getCount()
+
+		queryBuilder.skip((page - 1) * limit).take(limit)
+
+		const items = await queryBuilder.getMany()
+		const serializedItems = instanceToPlain(items)
+
+		const pages = Math.ceil(total_count / limit)
+
+		return {
+			page,
+			pages,
+			limit,
+			total_count,
+			items: serializedItems
+		}
 	}
 
 	async remove(id: string) {

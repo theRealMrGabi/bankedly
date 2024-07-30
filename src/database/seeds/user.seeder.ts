@@ -17,7 +17,7 @@ export default class UserSeeder implements Seeder {
 			const adminEmail = configService.get(EnvKeys.ADMIN_SEEDED_EMAIL) as string
 
 			const adminExists = await repository.findOneBy({
-				email: adminEmail
+				email: adminEmail.toLowerCase()
 			})
 
 			if (!adminExists) {
