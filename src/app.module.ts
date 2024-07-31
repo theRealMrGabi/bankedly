@@ -1,10 +1,11 @@
 import { Module, ValidationPipe } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
-import { APP_PIPE, APP_INTERCEPTOR } from '@nestjs/core'
+import { APP_PIPE, APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core'
 import { EventEmitterModule } from '@nestjs/event-emitter'
 import { CacheModule } from '@nestjs/cache-manager'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { DataSource } from 'typeorm'
+import { JwtModule } from '@nestjs/jwt'
 
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
@@ -14,6 +15,8 @@ import { RedisConfig } from './config/redis'
 import { AuthModule } from './auth/auth.module'
 import { setupTestDataSource } from '../test/testDatabase.setup'
 import { CustomCacheInterceptor } from './interceptors/CacheInterceptor'
+import { AuthGuard } from './common/guards/auth.guard'
+import { getJwtModuleOptions } from './config/jwt.config'
 
 @Module({
 	imports: [
@@ -42,6 +45,7 @@ import { CustomCacheInterceptor } from './interceptors/CacheInterceptor'
 				}
 			}
 		}),
+		JwtModule.registerAsync(getJwtModuleOptions()),
 		EventEmitterModule.forRoot(),
 		UsersModule,
 		AuthModule
@@ -60,6 +64,10 @@ import { CustomCacheInterceptor } from './interceptors/CacheInterceptor'
 			provide: APP_INTERCEPTOR,
 			// useClass: CacheInterceptor
 			useClass: CustomCacheInterceptor
+		},
+		{
+			provide: APP_GUARD,
+			useClass: AuthGuard
 		}
 	]
 })

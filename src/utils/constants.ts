@@ -20,7 +20,9 @@ export const EnvKeys = {
 export const RedisKeys = {
 	EMAIL_VALIDATION: 'EMAIL_VALIDATION',
 	RESET_PASSWORD: 'RESET_PASSWORD',
-	CACHE_TTL: 600 //ttl is 10mins
+	CACHE_TTL: 600, //ttl is 10mins,
+	USER: 'USER',
+	BLACKLIST_TOKEN: 'BLACKLIST_TOKEN'
 }
 
 export const EventsConstants = {

@@ -3,7 +3,8 @@ import {
 	Injectable,
 	NotFoundException,
 	Inject,
-	ForbiddenException
+	ForbiddenException,
+	UnauthorizedException
 } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { EventEmitter2 } from '@nestjs/event-emitter'
@@ -22,6 +23,7 @@ import { SigninDto } from './dto/signin.dto'
 import { VerifyOtpDto } from './dto/verifyEmail.dto'
 import { EmailDto } from './dto/email.dto'
 import { ResetPasswordDto } from './dto/resetPassword.dto'
+import { AccountStatus, UserRoles } from '../users/users.interface'
 
 @Injectable()
 export class AuthService {
@@ -66,6 +68,49 @@ export class AuthService {
 
 		if (!user) {
 			throw new BadRequestException('Invalid credentials')
+		}
+
+		if (user.accountStatus !== AccountStatus.ACTIVE) {
+			throw new ForbiddenException('Contact admin')
+		}
+
+		if (user.role !== UserRoles.CUSTOMER) {
+			throw new ForbiddenException('Invalid login request')
+		}
+
+		const isValidPassword = await bcrypt.compare(password, user.password)
+
+		if (!isValidPassword) {
+			throw new BadRequestException('Invalid credentials')
+		}
+
+		if (!user.isEmailVerified) {
+			throw new BadRequestException('Email address verification is required')
+		}
+
+		return {
+			access_token: await this.jwtService.signAsync({
+				id: user.id
+			}),
+			...instanceToPlain(user)
+		}
+	}
+
+	async backOfficesignin(signinDto: SigninDto) {
+		const { email, password } = signinDto
+
+		const user = await this.usersService.findByEmail(email.toLowerCase())
+
+		if (!user) {
+			throw new BadRequestException('Invalid credentials')
+		}
+
+		if (user.accountStatus !== AccountStatus.ACTIVE) {
+			throw new ForbiddenException('Contact admin')
+		}
+
+		if (user.role === UserRoles.CUSTOMER) {
+			throw new ForbiddenException('Invalid login request')
 		}
 
 		const isValidPassword = await bcrypt.compare(password, user.password)
@@ -198,5 +243,29 @@ export class AuthService {
 		await this.cacheManager.del(redisKey)
 
 		return { message: 'Password successfully changed' }
+	}
+
+	async signout(token: string) {
+		try {
+			const payload = await this.jwtService.verifyAsync(token)
+
+			const expirationTime = payload.exp * 1000 // Convert to milliseconds
+			const currentTime = Date.now()
+			const timeUntilExpiration = expirationTime - currentTime
+
+			if (timeUntilExpiration > 0) {
+				await this.cacheManager.set(
+					`${RedisKeys.BLACKLIST_TOKEN}_${token}`,
+					payload.id,
+					timeUntilExpiration
+				)
+			}
+
+			return {
+				message: 'Signout successful'
+			}
+		} catch (error) {
+			throw new UnauthorizedException('Invalid token')
+		}
 	}
 }

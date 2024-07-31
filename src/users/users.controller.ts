@@ -1,10 +1,24 @@
-import { Controller, Get, Query } from '@nestjs/common'
+import {
+	Controller,
+	Get,
+	Query,
+	Param,
+	NotFoundException,
+	UseGuards
+} from '@nestjs/common'
 
 import { UsersService } from './users.service'
 import { User } from './entities/user.entity'
 import { NoCache } from '../interceptors/NoCache'
 import { PaginationQueryDto } from '../common/dto/pagination.dto'
-import { SortingParams } from '../common/decorators/sort-decorator'
+import { SortingParams } from '../decorators/sort-decorator'
+import { GetUser } from '../decorators/user.decorator'
+import { UUIDValidationPipe } from '../pipes/uuid-validation.pipe'
+import { Serialize } from '../common/interceptors/serialize.interceptor'
+import { UserDto } from './dto/user.dto'
+import { AdminGuard } from '../common/guards/admin.guard'
+import { Roles } from '../interceptors/roles.interceptor'
+import { UserRoles } from './users.interface'
 
 const userSortFields = [
 	'id',
@@ -30,6 +44,8 @@ export class UsersController {
 	constructor(private readonly usersService: UsersService) {}
 
 	@Get()
+	@UseGuards(AdminGuard)
+	@Roles([UserRoles.ADMIN])
 	async getUsers(
 		@Query() query: PaginationQueryDto,
 		@SortingParams(userSortFields)
@@ -41,5 +57,32 @@ export class UsersController {
 			...query,
 			sort: sort?.sort
 		})
+	}
+
+	@Get('/me')
+	@Serialize(UserDto)
+	async getCurrentUser(@GetUser() user: User) {
+		const userId = user.id
+		const response = await this.usersService.findById(userId)
+
+		if (!response) {
+			throw new NotFoundException('User not found')
+		}
+
+		return response
+	}
+
+	@Get('/:id')
+	@Serialize(UserDto)
+	@UseGuards(AdminGuard)
+	@Roles([UserRoles.ADMIN])
+	async getUserById(@Param('id', UUIDValidationPipe) id: string) {
+		const user = await this.usersService.findById(id)
+
+		if (!user) {
+			throw new NotFoundException('User not found')
+		}
+
+		return user
 	}
 }

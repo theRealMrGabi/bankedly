@@ -34,4 +34,11 @@ export const generateRandomNumber = (length: number = 6): string => {
 	return randNumber({ min, max }).toString()
 }
 
+export const extractTokenFromHeader = (
+	authHeader: string
+): string | undefined => {
+	const [type, token] = authHeader?.split(' ') ?? []
+	return type === 'Bearer' ? token : undefined
+}
+
 export * from './constants'
