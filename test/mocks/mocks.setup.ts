@@ -24,8 +24,20 @@ export const usersServiceMock = {
 	findById: jest.fn(),
 	findByEmail: jest.fn(),
 	find: jest.fn(),
+	findOne: jest.fn(),
 	remove: jest.fn(),
 	updateUser: jest.fn()
+}
+
+export const authServiceMock = {
+	signup: jest.fn(),
+	signin: jest.fn(),
+	createBackOfficeStaff: jest.fn(),
+	backOfficesignin: jest.fn(),
+	activateAccount: jest.fn(),
+	forgotPassword: jest.fn(),
+	resetPassword: jest.fn(),
+	signout: jest.fn()
 }
 
 export const OtpServiceMock = {

@@ -4,7 +4,8 @@ import {
 	NotFoundException,
 	Inject,
 	ForbiddenException,
-	UnauthorizedException
+	UnauthorizedException,
+	ConflictException
 } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { EventEmitter2 } from '@nestjs/event-emitter'
@@ -24,6 +25,9 @@ import { VerifyOtpDto } from './dto/verifyEmail.dto'
 import { EmailDto } from './dto/email.dto'
 import { ResetPasswordDto } from './dto/resetPassword.dto'
 import { AccountStatus, UserRoles } from '../users/users.interface'
+import { AuditLog } from '../services/auditLog.service'
+import { CreateBackOfficeStaffDto } from '../users/dto/createBackofficeStaff.dto'
+import { User } from '../users/entities/user.entity'
 
 @Injectable()
 export class AuthService {
@@ -54,6 +58,14 @@ export class AuthService {
 				otpCode: activationCode
 			})
 		} satisfies MailDto)
+
+		this.eventEmitter.emit(EventsConstants.AUDIT_LOG, {
+			type: 'User activity',
+			action: 'NEW USER SIGN UP',
+			initiatedBy: `${firstname} ${lastname}`,
+			result: 'SUCCESS',
+			metadata: signupDto
+		} satisfies AuditLog)
 
 		return {
 			message:
@@ -88,11 +100,75 @@ export class AuthService {
 			throw new BadRequestException('Email address verification is required')
 		}
 
+		this.eventEmitter.emit(EventsConstants.AUDIT_LOG, {
+			type: 'User activity',
+			action: 'USER SIGN IN',
+			initiatedBy: `${user.firstname} ${user.lastname}`,
+			result: 'SUCCESS',
+			metadata: signinDto
+		} satisfies AuditLog)
+
 		return {
 			access_token: await this.jwtService.signAsync({
 				id: user.id
 			}),
 			...instanceToPlain(user)
+		}
+	}
+
+	async createBackOfficeStaff({
+		payload,
+		admin
+	}: {
+		payload: CreateBackOfficeStaffDto
+		admin: User
+	}) {
+		const { email, username, phoneNumber, firstname, lastname } = payload
+
+		const userExists = await this.usersService.findOne({
+			email,
+			username,
+			phoneNumber
+		})
+
+		console.log('🚀 ==> userExists:', userExists)
+
+		if (userExists) {
+			throw new ConflictException(
+				'Unique email, username or phonenumber must be used. Please try different details'
+			)
+		}
+
+		const user = await this.usersService.create(payload)
+		console.log('🚀 ==> user:', user)
+
+		const activationCode = this.otpService.generateOtp()
+		await this.cacheManager.set(
+			`${RedisKeys.EMAIL_VALIDATION}_${email.toLowerCase()}`,
+			activationCode,
+			RedisKeys.CACHE_TTL
+		)
+
+		this.eventEmitter.emit(EventsConstants.SEND_EMAIL, {
+			emailSubject: 'Welcome to Bandkedly',
+			emailRecipient: email,
+			htmlContent: welcomeEmail({
+				recipientName: `${lastname} ${firstname}`,
+				otpCode: activationCode
+			})
+		} satisfies MailDto)
+
+		this.eventEmitter.emit(EventsConstants.AUDIT_LOG, {
+			type: 'Backoffice activity',
+			action: 'NEW BACK OFFICER CREATED',
+			initiatedBy: `${admin.firstname} ${admin.lastname}`,
+			result: 'SUCCESS',
+			metadata: payload
+		} satisfies AuditLog)
+
+		return {
+			message:
+				'Signup successful. Instructions on email verification has been sent to your email.'
 		}
 	}
 
@@ -122,6 +198,14 @@ export class AuthService {
 		if (!user.isEmailVerified) {
 			throw new BadRequestException('Email address verification is required')
 		}
+
+		this.eventEmitter.emit(EventsConstants.AUDIT_LOG, {
+			type: 'Backoffice activity',
+			action: 'BACKOFFICE SIGN IN',
+			initiatedBy: `${user.firstname} ${user.lastname}`,
+			result: 'SUCCESS',
+			metadata: signinDto
+		} satisfies AuditLog)
 
 		return {
 			access_token: await this.jwtService.signAsync({

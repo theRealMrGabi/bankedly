@@ -4,7 +4,9 @@ import {
 	Query,
 	Param,
 	NotFoundException,
-	UseGuards
+	UseGuards,
+	Post,
+	Body
 } from '@nestjs/common'
 
 import { UsersService } from './users.service'
@@ -19,6 +21,8 @@ import { UserDto } from './dto/user.dto'
 import { AdminGuard } from '../common/guards/admin.guard'
 import { Roles } from '../interceptors/roles.interceptor'
 import { UserRoles } from './users.interface'
+import { CreateBackOfficeStaffDto } from './dto/createBackofficeStaff.dto'
+import { AuthService } from '../auth/auth.service'
 
 const userSortFields = [
 	'id',
@@ -41,7 +45,10 @@ const userSortFields = [
 	version: '1'
 })
 export class UsersController {
-	constructor(private readonly usersService: UsersService) {}
+	constructor(
+		private readonly usersService: UsersService,
+		private authService: AuthService
+	) {}
 
 	@Get()
 	@UseGuards(AdminGuard)
@@ -84,5 +91,18 @@ export class UsersController {
 		}
 
 		return user
+	}
+
+	@Post('/backoffice/create')
+	@UseGuards(AdminGuard)
+	@Roles([UserRoles.ADMIN])
+	async createBackofficeStaff(
+		@GetUser() user: User,
+		@Body() body: CreateBackOfficeStaffDto
+	) {
+		return await this.authService.createBackOfficeStaff({
+			payload: body,
+			admin: user
+		})
 	}
 }

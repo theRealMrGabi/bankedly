@@ -1,22 +1,30 @@
-import { Module, ValidationPipe } from '@nestjs/common'
+import {
+	Module,
+	ValidationPipe,
+	NestModule,
+	MiddlewareConsumer
+} from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { APP_PIPE, APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core'
 import { EventEmitterModule } from '@nestjs/event-emitter'
 import { CacheModule } from '@nestjs/cache-manager'
 import { TypeOrmModule } from '@nestjs/typeorm'
-import { DataSource } from 'typeorm'
 import { JwtModule } from '@nestjs/jwt'
+import { TerminusModule } from '@nestjs/terminus'
+import { DataSource } from 'typeorm'
+
+import { UsersModule } from './users/users.module'
+import { AuthModule } from './auth/auth.module'
 
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
-import { UsersModule } from './users/users.module'
 import { ormConfig } from './config/ormconfig'
 import { RedisConfig } from './config/redis'
-import { AuthModule } from './auth/auth.module'
 import { setupTestDataSource } from '../test/testDatabase.setup'
 import { CustomCacheInterceptor } from './interceptors/CacheInterceptor'
 import { AuthGuard } from './common/guards/auth.guard'
 import { getJwtModuleOptions } from './config/jwt.config'
+import { LoggerMiddleware } from './middlewares/logger.middleware'
 
 @Module({
 	imports: [
@@ -45,6 +53,7 @@ import { getJwtModuleOptions } from './config/jwt.config'
 				}
 			}
 		}),
+		TerminusModule,
 		JwtModule.registerAsync(getJwtModuleOptions()),
 		EventEmitterModule.forRoot(),
 		UsersModule,
@@ -71,4 +80,8 @@ import { getJwtModuleOptions } from './config/jwt.config'
 		}
 	]
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+	configure(consumer: MiddlewareConsumer) {
+		consumer.apply(LoggerMiddleware).forRoutes('*')
+	}
+}

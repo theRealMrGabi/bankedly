@@ -66,6 +66,12 @@ jest.mock('postmark', () => ({
 	}))
 }))
 
+jest.mock('@slack/webhook', () => ({
+	IncomingWebhook: jest.fn(() => ({
+		send: jest.fn()
+	}))
+}))
+
 jest.mock('cache-manager-redis-store', () => ({
 	redisStore: jest.fn().mockResolvedValue({
 		get: jest.fn(),

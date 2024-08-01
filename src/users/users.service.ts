@@ -34,8 +34,16 @@ export class UsersService {
 		return await this.userRepository.save(user)
 	}
 
+	async findOne(
+		query?: Partial<Omit<User, 'lowercaseEmail' | 'hashPassword'>>
+	) {
+		return await this.userRepository.findOne({
+			where: [query]
+		})
+	}
+
 	async findById(id: string): Promise<User | null> {
-		return this.userRepository.findOne({
+		return await this.userRepository.findOne({
 			where: {
 				id
 			}
@@ -43,7 +51,7 @@ export class UsersService {
 	}
 
 	async findByEmail(email: string) {
-		return this.userRepository.findOne({
+		return await this.userRepository.findOne({
 			where: {
 				email
 			}
