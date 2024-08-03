@@ -16,12 +16,18 @@ export const ormConfig = (): PostgresConnectionOptions & SeederOptions => ({
 	username: configService.get(EnvKeys.DB_USERNAME),
 	password: configService.get(EnvKeys.DB_PASSWORD),
 	database: configService.get(EnvKeys.DB_NAME),
-	synchronize: false,
+	synchronize: isTestEnvironment,
 	logging: isDevEnvironment,
 	entities: isTestEnvironment ? ['**/*.entity.ts'] : ['**/*.entity.js'],
 	migrations: ['src/migration/**/*.js'],
-	seeds: ['dist/src/database/seeds/**/*.js'],
-	factories: ['dist/src/database/factories/**/*.js'],
+	seeds: [
+		isTestEnvironment ? 'src/**/*.seeder.ts' : 'dist/src/database/seeds/**/*.js'
+	],
+	factories: [
+		isTestEnvironment
+			? 'src/**/*.factory.ts'
+			: 'dist/src/database/factories/**/*.js'
+	],
 	seedTracking: false
 })
 

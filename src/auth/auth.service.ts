@@ -45,7 +45,7 @@ export class AuthService {
 
 		const activationCode = this.otpService.generateOtp()
 		await this.cacheManager.set(
-			`${RedisKeys.EMAIL_VALIDATION}_${email.toLowerCase()}`,
+			`${RedisKeys.EMAIL_VALIDATION}_${email?.toLowerCase()}`,
 			activationCode,
 			RedisKeys.CACHE_TTL
 		)
@@ -131,16 +131,13 @@ export class AuthService {
 			phoneNumber
 		})
 
-		console.log('🚀 ==> userExists:', userExists)
-
 		if (userExists) {
 			throw new ConflictException(
 				'Unique email, username or phonenumber must be used. Please try different details'
 			)
 		}
 
-		const user = await this.usersService.create(payload)
-		console.log('🚀 ==> user:', user)
+		await this.usersService.create(payload)
 
 		const activationCode = this.otpService.generateOtp()
 		await this.cacheManager.set(

@@ -1,55 +1,63 @@
-import { ormConfig } from '../src/config/ormconfig'
-import { newDb, DataType } from 'pg-mem'
+import { newDb, DataType, IMemoryDb } from 'pg-mem'
 import { DataSource } from 'typeorm'
+import { v4 as uuidv4 } from 'uuid'
 
-function v4(): string {
-	const randomValue = (Math.random() * 16) | 0
-	const variantBit = (c) =>
-		c === 'x' ? randomValue : (randomValue & 0x3) | 0x8
-
-	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-		const v = variantBit(c)
-		return v.toString(16)
-	})
-}
+import { ormConfig } from '../src/config/ormconfig'
 
 export const setupTestDataSource = async () => {
-	const db = newDb({
+	const db: IMemoryDb = newDb({
 		autoCreateForeignKeyIndices: true
 	})
 
 	db.public.registerFunction({
-		implementation: () => 'test',
 		name: 'current_database',
-		returns: DataType.text
+		args: [],
+		returns: DataType.text,
+		implementation: () => 'test_db'
+	})
+
+	db.public.registerFunction({
+		name: 'version',
+		args: [],
+		returns: DataType.text,
+		implementation: () => 'PostgreSQL 12.0'
+	})
+
+	db.public.registerFunction({
+		name: 'obj_description',
+		args: [DataType.text, DataType.text],
+		returns: DataType.text,
+		implementation: () => null
+	})
+
+	db.public.registerFunction({
+		name: 'format_type',
+		args: [DataType.integer, DataType.integer],
+		returns: DataType.text,
+		implementation: () => 'text'
+	})
+
+	db.public.registerFunction({
+		name: 'col_description',
+		args: [DataType.integer, DataType.integer],
+		returns: DataType.text,
+		implementation: () => null
 	})
 
 	db.registerExtension('uuid-ossp', (schema) => {
 		schema.registerFunction({
 			name: 'uuid_generate_v4',
 			returns: DataType.uuid,
-			implementation: v4,
+			implementation: uuidv4,
 			impure: true
 		})
 	})
 
-	db.public.registerFunction({
-		name: 'version',
-		implementation: () =>
-			'PostgreSQL 14.2, compiled by Visual C++ build 1914, 64-bit'
-	})
-
-	db.public.registerFunction({
-		name: 'obj_description',
-		args: [DataType.regclass, DataType.text],
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		implementation: (obj: any, desc: string) => null,
-		returns: DataType.text
-	})
-
 	try {
-		const ds: DataSource =
-			await db.adapters.createTypeormDataSource(ormConfig())
+		const ds: DataSource = await db.adapters.createTypeormDataSource({
+			type: 'postgres',
+			entities: ormConfig().entities
+		})
 		await ds.initialize()
 		await ds.synchronize()
 

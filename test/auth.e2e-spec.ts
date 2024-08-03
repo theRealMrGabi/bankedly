@@ -2,21 +2,24 @@ import * as request from 'supertest'
 import { randEmail, randPassword } from '@ngneat/falso'
 
 import { app } from './setup'
-import { SignupPayload, SignupUser, SigninPayload } from './helpers/auth'
+import { SignupPayload, SignupUser, signinPassword } from './helpers/auth'
 import { getMockCache, getMockedOtpCode } from '../src/app.test.module'
 import { RedisKeys, generateRandomNumber } from '../src/utils'
 
-const signupUrl = '/auth/signup'
-const signinUrl = '/auth/signin'
-const activateAccountUrl = '/auth/activate'
+export const signupUrl = '/auth/signup'
+export const signinUrl = '/auth/signin'
+export const activateAccountUrl = '/auth/activate'
+export const backOfficeSignin = '/auth/backoffice/signin'
 const forgotPasswordUrl = '/auth/forgot-password'
 const resetPasswordUrl = '/auth/reset-password'
 
 describe('Signup user should', () => {
 	it('return error messages if required fields are not passed during signup', async () => {
-		const response = await request(app.getHttpServer()).post(signupUrl).send()
+		const response = await request(app.getHttpServer())
+			.post(signupUrl)
+			.send()
+			.expect(400)
 
-		expect(response.statusCode).toBe(400)
 		expect(response.body).toEqual(
 			expect.objectContaining({
 				message: expect.arrayContaining([
@@ -42,11 +45,12 @@ describe('Signup user should', () => {
 	})
 
 	it('register unique email address, username or phone number during signup', async () => {
-		await SignupUser()
+		const email = randEmail()
+		await SignupUser({ email })
 
 		const response = await request(app.getHttpServer())
 			.post(signupUrl)
-			.send(SignupPayload)
+			.send({ ...SignupPayload, email })
 
 		expect(response.statusCode).toBe(409)
 		expect(response.body.message).toEqual(
@@ -55,10 +59,12 @@ describe('Signup user should', () => {
 	})
 
 	it('successfully signup a user', async () => {
+		const email = randEmail()
+
 		try {
 			const response = await request(app.getHttpServer())
 				.post(signupUrl)
-				.send(SignupPayload)
+				.send({ ...SignupPayload, email })
 
 			expect(response.statusCode).toBe(201)
 			expect(response.body.message).toEqual(
@@ -70,7 +76,7 @@ describe('Signup user should', () => {
 	})
 
 	it('throw error if required fields are not submitted when activating a user account', async () => {
-		await SignupUser()
+		await SignupUser({})
 
 		const response = await request(app.getHttpServer())
 			.patch(activateAccountUrl)
@@ -92,13 +98,14 @@ describe('Signup user should', () => {
 	})
 
 	it('throw error if an invalid code is used to activate a user account', async () => {
-		await SignupUser()
+		const email = randEmail()
+		await SignupUser({ email })
 
 		const response = await request(app.getHttpServer())
 			.patch(activateAccountUrl)
 			.send({
 				otpCode: generateRandomNumber(),
-				email: SigninPayload.email
+				email
 			})
 			.expect(400)
 
@@ -106,12 +113,14 @@ describe('Signup user should', () => {
 	})
 
 	it('successfully activate a user account', async () => {
-		await SignupUser()
+		const email = randEmail()
+
+		await SignupUser({ email })
 		const otpCode = getMockedOtpCode()
 
 		const response = await request(app.getHttpServer())
 			.patch(activateAccountUrl)
-			.send({ otpCode, email: SigninPayload.email })
+			.send({ otpCode, email })
 			.expect(200)
 
 		expect(response.body.message).toEqual('Account activated successfully')
@@ -148,10 +157,12 @@ describe('Signin controller should', () => {
 	})
 
 	it('throw error if a signed up user uses an invalid password to login ', async () => {
-		await SignupUser()
+		const email = randEmail()
+
+		await SignupUser({ email })
 
 		const response = await request(app.getHttpServer()).post(signinUrl).send({
-			email: SigninPayload.email,
+			email,
 			password: randPassword()
 		})
 
@@ -160,11 +171,12 @@ describe('Signin controller should', () => {
 	})
 
 	it('require an account is verified before a successul login', async () => {
-		await SignupUser()
+		const email = randEmail()
+		await SignupUser({ email })
 
 		const response = await request(app.getHttpServer())
 			.post(signinUrl)
-			.send(SigninPayload)
+			.send({ email, password: signinPassword })
 
 		expect(response.statusCode).toBe(400)
 		expect(response.body.message).toEqual(
@@ -173,12 +185,14 @@ describe('Signin controller should', () => {
 	})
 
 	it('return 200 statusCode for a successul login', async () => {
-		await SignupUser()
+		const email = randEmail()
+
+		await SignupUser({ email })
 		const otpCode = getMockedOtpCode()
 
 		const activateAccountResponse = await request(app.getHttpServer())
 			.patch(activateAccountUrl)
-			.send({ otpCode, email: SigninPayload.email })
+			.send({ otpCode, email })
 			.expect(200)
 
 		expect(activateAccountResponse.body.message).toEqual(
@@ -187,7 +201,7 @@ describe('Signin controller should', () => {
 
 		const response = await request(app.getHttpServer())
 			.post(signinUrl)
-			.send(SigninPayload)
+			.send({ email, password: signinPassword })
 			.expect(201)
 
 		expect(response.body).toHaveProperty('access_token')
@@ -233,9 +247,9 @@ describe('Forgot password should', () => {
 	})
 
 	it('expect that the OTP Code sent should be saved in cache and should return a success message', async () => {
-		await SignupUser()
+		const email = randEmail()
 
-		const email = SigninPayload.email
+		await SignupUser({ email })
 
 		const response = await request(app.getHttpServer())
 			.post(forgotPasswordUrl)
@@ -299,9 +313,9 @@ describe('Reset password should', () => {
 	})
 
 	it('throw error if wrong/invalid otpcode is passed', async () => {
-		await SignupUser()
+		const email = randEmail({ nameSeparator: 'none' })
 
-		const email = SigninPayload.email
+		await SignupUser({ email })
 
 		await request(app.getHttpServer())
 			.post(forgotPasswordUrl)
@@ -320,9 +334,9 @@ describe('Reset password should', () => {
 	})
 
 	it('successfully reset a user password and use the new password to sign in successfully', async () => {
-		const email = SigninPayload.email
+		const email = randEmail({ nameSeparator: 'none' })
 
-		await SignupUser()
+		await SignupUser({ email })
 
 		await request(app.getHttpServer())
 			.post(forgotPasswordUrl)
@@ -333,7 +347,7 @@ describe('Reset password should', () => {
 
 		await request(app.getHttpServer())
 			.patch(activateAccountUrl)
-			.send({ otpCode, email: SigninPayload.email })
+			.send({ otpCode, email })
 			.expect(200)
 
 		const response = await request(app.getHttpServer())

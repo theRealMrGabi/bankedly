@@ -13,8 +13,10 @@ import { AccountStatus, UserRoles } from '../users/users.interface'
 import { User } from '../users/entities/user.entity'
 
 import { authMockProviders } from '../../test/mocks/auth.mocks'
-import { SignupPayload, SigninPayload } from '../../test/helpers/auth'
+import { signinPassword, SignupPayload } from '../../test/helpers/auth'
 import { generateRandomNumber } from '../utils'
+
+const email = randEmail({ nameSeparator: 'none' })
 
 describe('AuthController', () => {
 	let controller: AuthController
@@ -46,6 +48,7 @@ describe('AuthController', () => {
 			createdAt: new Date(),
 			updatedAt: new Date(),
 			id: '1',
+			email,
 			lowercaseEmail: jest.fn(),
 			hashPassword: jest.fn(),
 			loadPassword: jest.fn(),
@@ -77,6 +80,11 @@ describe('AuthController', () => {
 
 	it('should signin a user', async () => {
 		jest.spyOn(authService, 'signin')
+
+		const SigninPayload = {
+			email,
+			password: signinPassword
+		}
 
 		try {
 			const res = await controller.signin(SigninPayload)

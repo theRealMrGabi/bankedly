@@ -18,7 +18,7 @@
 		"test:cov": "cross-env NODE_ENV=test jest --coverage",
 		"test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
 		"test:e2e": "cross-env NODE_ENV=test jest --config ./test/jest-e2e.json",
-		"test:e2e:watch": "cross-env NODE_ENV=test jest --config ./test/jest-e2e.json --detectOpenHandles --watch",
+		"test:e2e:watch": "cross-env NODE_ENV=test jest --config ./test/jest-e2e.json --detectOpenHandles --runInBand --watch",
 		"prepare": "husky",
 		"pre-commit": "npx lint-staged && npm run lint",
 		"pre-push": "npm run test:e2e",
@@ -82,7 +82,8 @@
 		"ts-loader": "^9.4.3",
 		"ts-node": "^10.9.1",
 		"tsconfig-paths": "^4.2.0",
-		"typescript": "^5.1.3"
+		"typescript": "^5.1.3",
+		"uuid": "^10.0.0"
 	},
 	"jest": {
 		"moduleFileExtensions": [

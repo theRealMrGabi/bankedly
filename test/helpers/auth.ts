@@ -8,28 +8,130 @@ import {
 
 import { app } from '../setup'
 import { SignupDto } from '../../src/auth/dto/signup.dto'
-import { SigninDto } from '../../src/auth/dto/signin.dto'
-import { generateNigerianPhoneNumber } from '../../src/utils'
+import { EnvKeys, generateNigerianPhoneNumber } from '../../src/utils'
+import { ConfigServiceSetup } from '../../src/config/config.service'
+import { getMockedOtpCode } from '../../src/app.test.module'
+import {
+	signupUrl,
+	activateAccountUrl,
+	signinUrl,
+	backOfficeSignin
+} from '../auth.e2e-spec'
+import { User } from '../../src/users/entities/user.entity'
+import { UserRoles } from '../../src/users/users.interface'
+
+type SigninResponse = User & {
+	access_token: string
+}
+
+interface PartialSigninProps {
+	email?: string
+}
+
+const configService = ConfigServiceSetup.getInstance()
+
+export const signinPassword = 'r@ndom!?P@ssword123!'
 
 export const SignupPayload = {
-	email: randEmail(),
 	firstname: randFirstName(),
 	lastname: randLastName(),
 	username: randUserName({ withAccents: false }).replace(/[^a-zA-Z0-9]/g, ''),
-	password: 'r@ndom!?P@ssword123!',
+	password: signinPassword,
 	phoneNumber: generateNigerianPhoneNumber()
-} satisfies SignupDto
+} as SignupDto
 
-const { email, password } = SignupPayload
+export const SignupBackOfficeEditorPayload = {
+	...SignupPayload,
+	role: UserRoles.EDITOR
+}
 
-export const SigninPayload = {
-	email,
-	password
-} satisfies SigninDto
-
-export const SignupUser = async () => {
+export const SignupUser = async ({
+	email = randEmail()
+}: PartialSigninProps) => {
 	return await request(app.getHttpServer())
-		.post('/auth/signup')
-		.send(SignupPayload)
+		.post(signupUrl)
+		.send({ ...SignupPayload, email })
 		.expect(201)
+}
+
+export const SigninUser = async ({
+	email = randEmail()
+}: PartialSigninProps) => {
+	await SignupUser({ email })
+
+	const otpCode = getMockedOtpCode()
+	await request(app.getHttpServer())
+		.patch(activateAccountUrl)
+		.send({ otpCode, email })
+		.expect(200)
+
+	const response = await request(app.getHttpServer())
+		.post(signinUrl)
+		.send({
+			email,
+			password: signinPassword
+		})
+		.expect(201)
+
+	const responseBody = response.body as SigninResponse
+
+	return responseBody
+}
+
+export const SigninSuperAdmin = async () => {
+	const payload = {
+		email: configService.get(EnvKeys.ADMIN_SEEDED_EMAIL),
+		password: configService.get(EnvKeys.ADMIN_SEEDED_PASSWORD)
+	}
+
+	const response = await request(app.getHttpServer())
+		.post(backOfficeSignin)
+		.send(payload)
+		.expect(201)
+
+	const responseBody = response.body as SigninResponse
+
+	return responseBody
+}
+
+export const SigninBackofficeEditor = async () => {
+	const email = randEmail({ nameSeparator: 'none' })
+
+	const { access_token } = await SigninSuperAdmin()
+	const otpCode = getMockedOtpCode()
+
+	await request(app.getHttpServer())
+		.post('/users/backoffice/create')
+		.send({
+			...SignupBackOfficeEditorPayload
+		})
+		.set('Authorization', `Bearer ${access_token}`)
+		.expect(201)
+
+	await request(app.getHttpServer())
+		.patch(activateAccountUrl)
+		.send({ otpCode, email })
+		.expect(200)
+
+	const response = await request(app.getHttpServer())
+		.post(backOfficeSignin)
+		.send({ email, password: signinPassword })
+		.expect(201)
+
+	const responseBody = response.body as SigninResponse
+
+	return responseBody
+}
+
+export const CheckFailedAuthentication = async ({
+	url,
+	method = 'get'
+}: {
+	url: string
+	method?: 'get' | 'post' | 'patch' | 'delete'
+}) => {
+	const response = await request(app.getHttpServer())[method](url).expect(401)
+	expect(response.body.message).toEqual('Authentication failed')
+
+	return response
 }

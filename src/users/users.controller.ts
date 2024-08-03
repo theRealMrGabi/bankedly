@@ -82,7 +82,7 @@ export class UsersController {
 	@Get('/:id')
 	@Serialize(UserDto)
 	@UseGuards(AdminGuard)
-	@Roles([UserRoles.ADMIN])
+	@Roles([UserRoles.ADMIN, UserRoles.EDITOR])
 	async getUserById(@Param('id', UUIDValidationPipe) id: string) {
 		const user = await this.usersService.findById(id)
 

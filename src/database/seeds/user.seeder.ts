@@ -1,7 +1,7 @@
 import { Seeder, SeederFactoryManager } from 'typeorm-extension'
 import { DataSource } from 'typeorm'
 import { User } from '../../users/entities/user.entity'
-import { UserRoles } from 'src/users/users.interface'
+import { UserRoles } from '../../users/users.interface'
 import { EnvKeys } from '../../utils'
 import { ConfigServiceSetup } from '../../config/config.service'
 
