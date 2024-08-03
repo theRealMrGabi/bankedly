@@ -4,7 +4,9 @@ import {
 	PrimaryGeneratedColumn,
 	CreateDateColumn,
 	UpdateDateColumn,
-	BeforeInsert
+	BeforeInsert,
+	BeforeUpdate,
+	AfterLoad
 } from 'typeorm'
 import * as bcrypt from 'bcryptjs'
 import { Exclude } from 'class-transformer'
@@ -64,9 +66,28 @@ export class User {
 	@UpdateDateColumn({ type: 'timestamp' })
 	updatedAt: Date
 
+	@Exclude()
+	private previousPassword: string // Define the transient property
+
+	@AfterLoad()
+	private loadPassword(): void {
+		this.previousPassword = this.password
+	}
+
 	@BeforeInsert()
+	@BeforeUpdate()
+	lowercaseEmail() {
+		if (this.email) {
+			this.email = this.email.toLowerCase()
+		}
+	}
+
+	@BeforeInsert()
+	@BeforeUpdate()
 	async hashPassword() {
-		const salt = await bcrypt.genSalt(12)
-		this.password = await bcrypt.hash(this.password, salt)
+		if (this.password && this.password !== this.previousPassword) {
+			const salt = await bcrypt.genSalt(12)
+			this.password = await bcrypt.hash(this.password, salt)
+		}
 	}
 }
