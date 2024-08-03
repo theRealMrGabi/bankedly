@@ -1,18 +1,13 @@
-export const EmailStatus = {
-	VERIFIED: 'VERIFIED',
-	NOT_VERIFIED: 'NOT_VERIFIED'
+export enum UserRoles {
+	ADMIN = 'admin',
+	EDITOR = 'editor',
+	CUSTOMER = 'customer'
 }
 
-export const UserRoles = {
-	ADMIN: 'ADMIN',
-	EDITOR: 'EDITOR',
-	CUSTOMER: 'CUSTOMER'
-}
-
-export const AccountStatus = {
-	ACTIVE: 'ACTIVE',
-	INACTIVE: 'INACTIVE',
-	SUSPENDED: 'SUSPENDED',
-	FROZEN: 'FROZEN',
-	DELETED: 'DELETED'
+export enum AccountStatus {
+	ACTIVE = 'active',
+	INACTIVE = 'inactive',
+	SUSPENDED = 'suspended',
+	FROZEN = 'frozen',
+	DELETED = 'deleted'
 }

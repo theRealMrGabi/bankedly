@@ -3,9 +3,15 @@ import {
 	Column,
 	PrimaryGeneratedColumn,
 	CreateDateColumn,
-	UpdateDateColumn
+	UpdateDateColumn,
+	BeforeInsert,
+	BeforeUpdate,
+	AfterLoad
 } from 'typeorm'
-import { EmailStatus, UserRoles, AccountStatus } from '../users.interface'
+import * as bcrypt from 'bcryptjs'
+import { Exclude } from 'class-transformer'
+
+import { UserRoles, AccountStatus } from '../users.interface'
 
 @Entity()
 export class User {
@@ -16,6 +22,7 @@ export class User {
 	username: string
 
 	@Column()
+	@Exclude()
 	password: string
 
 	@Column()
@@ -27,14 +34,16 @@ export class User {
 	@Column({ unique: true })
 	email: string
 
-	@Column({
-		type: 'enum',
-		enum: EmailStatus,
-		default: EmailStatus.NOT_VERIFIED
-	})
-	isEmailVerified: string
+	@Column({ unique: true })
+	phoneNumber: string
 
-	@CreateDateColumn()
+	@Column({
+		type: 'boolean',
+		default: false
+	})
+	isEmailVerified: boolean
+
+	@Column({ type: 'timestamp', nullable: true, default: null })
 	emailVerifiedAt: Date
 
 	@Column({
@@ -51,9 +60,34 @@ export class User {
 	})
 	role: string
 
-	@CreateDateColumn()
+	@CreateDateColumn({ type: 'timestamp' })
 	createdAt: Date
 
-	@UpdateDateColumn()
+	@UpdateDateColumn({ type: 'timestamp' })
 	updatedAt: Date
+
+	@Exclude()
+	private previousPassword: string // Define the transient property
+
+	@AfterLoad()
+	private loadPassword(): void {
+		this.previousPassword = this.password
+	}
+
+	@BeforeInsert()
+	@BeforeUpdate()
+	lowercaseEmail() {
+		if (this.email) {
+			this.email = this.email.toLowerCase()
+		}
+	}
+
+	@BeforeInsert()
+	@BeforeUpdate()
+	async hashPassword() {
+		if (this.password && this.password !== this.previousPassword) {
+			const salt = await bcrypt.genSalt(12)
+			this.password = await bcrypt.hash(this.password, salt)
+		}
+	}
 }
