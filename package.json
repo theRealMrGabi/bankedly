@@ -24,8 +24,8 @@
 		"pre-push": "npm run test:e2e",
 		"typeorm": "typeorm-ts-node-commonjs",
 		"migration:create": "typeorm migration:create",
-		"migration:run": "typeorm migration:run",
-		"migration:run:ts-node": "typeorm-ts-node-commonjs migration:run",
+		"migration:run": "npm run typeorm migration:run  -- -d ./dist/src/config/ormconfig.js",
+		"migration:run:ts-node": "cross-env NODE_ENV=development npm run typeorm migration:run -- -d ./src/config/ormconfig.ts",
 		"seed:run": "cross-env NODE_ENV=development ts-node ./node_modules/typeorm-extension/bin/cli.cjs seed:run  -d ./dist/src/config/ormconfig.js",
 		"seed:create": "cross-env NODE_ENV=development ts-node ./node_modules/typeorm-extension/bin/cli.cjs seed:create"
 	},

@@ -19,6 +19,9 @@ export const ormConfig = (): PostgresConnectionOptions & SeederOptions => ({
 	synchronize: isTestEnvironment,
 	logging: isDevEnvironment,
 	entities: isTestEnvironment ? ['**/*.entity.ts'] : ['**/*.entity.js'],
+	// migrations: isDevEnvironment
+	// 	? ['src/migration/**/*.ts']
+	// 	: ['src/migration/**/*.js'],
 	migrations: ['src/migration/**/*.js'],
 	seeds: [
 		isTestEnvironment ? 'src/**/*.seeder.ts' : 'dist/src/database/seeds/**/*.js'
