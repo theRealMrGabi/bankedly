@@ -6,7 +6,7 @@ import { AuditService, AuditLog } from './auditLog.service'
 import { EventsConstants } from '../utils'
 
 @Injectable()
-export class EmailEventHandlerService {
+export class EventHandlerService {
 	constructor(
 		private readonly postMarkService: PostMarkService,
 		private auditService: AuditService

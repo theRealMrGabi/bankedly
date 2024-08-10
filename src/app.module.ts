@@ -26,6 +26,7 @@ import { AuthGuard } from './common/guards/auth.guard'
 import { getJwtModuleOptions } from './config/jwt.config'
 import { LoggerMiddleware } from './middlewares/logger.middleware'
 import { AccountModule } from './account/account.module'
+import { TransactionModule } from './transactions/transactions.module'
 
 @Module({
 	imports: [
@@ -59,7 +60,8 @@ import { AccountModule } from './account/account.module'
 		EventEmitterModule.forRoot(),
 		UsersModule,
 		AuthModule,
-		AccountModule
+		AccountModule,
+		TransactionModule
 	],
 	controllers: [AppController],
 	providers: [

@@ -4,7 +4,7 @@ import { IncomingWebhook, IncomingWebhookSendArguments } from '@slack/webhook'
 import { EnvKeys } from '../utils'
 
 export interface AuditLog {
-	type: 'User activity' | 'Backoffice activity'
+	type: 'User activity' | 'Backoffice activity' | 'Server activity'
 	action: string
 	initiatedBy: string
 	result: 'SUCCESS' | 'ERROR'
