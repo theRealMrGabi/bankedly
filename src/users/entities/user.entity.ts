@@ -6,12 +6,14 @@ import {
 	UpdateDateColumn,
 	BeforeInsert,
 	BeforeUpdate,
-	AfterLoad
+	AfterLoad,
+	OneToMany
 } from 'typeorm'
 import * as bcrypt from 'bcryptjs'
 import { Exclude } from 'class-transformer'
 
 import { UserRoles, AccountStatus } from '../users.interface'
+import { Account } from '../../account/entities/account.entity'
 
 @Entity()
 export class User {
@@ -52,6 +54,9 @@ export class User {
 		default: AccountStatus.ACTIVE
 	})
 	accountStatus: string
+
+	@OneToMany(() => Account, (bankAccount) => bankAccount.user)
+	bankAccounts: Array<Account>
 
 	@Column({
 		type: 'enum',

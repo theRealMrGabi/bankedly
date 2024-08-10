@@ -10,6 +10,7 @@ import { instanceToPlain } from 'class-transformer'
 
 import { SignupDto } from '../auth/dto/signup.dto'
 import { User } from './entities/user.entity'
+import { PaginationAndFilter } from '../interface/utils.interface'
 
 @Injectable()
 export class UsersService {
@@ -46,7 +47,8 @@ export class UsersService {
 		return await this.userRepository.findOne({
 			where: {
 				id
-			}
+			},
+			relations: ['bankAccounts']
 		})
 	}
 
@@ -65,16 +67,11 @@ export class UsersService {
 		sort = 'createdAt',
 		order = 'DESC',
 		keyword
-	}: {
-		filters?: Partial<Omit<User, 'page' | 'limit' | 'sort' | 'order'>>
-		page?: number
-		limit?: number
-		sort?: keyof User
-		order?: 'ASC' | 'DESC'
-		keyword?: string
-	}) {
+	}: PaginationAndFilter<User>) {
 		const searchKeyword = keyword?.toLowerCase()
 		const queryBuilder = this.userRepository.createQueryBuilder('user')
+
+		queryBuilder.leftJoinAndSelect('user.bankAccounts', 'account')
 
 		Object.keys(filters).forEach((key) => {
 			queryBuilder.andWhere(`user.${key} = :${key}`, {
