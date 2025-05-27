@@ -50,8 +50,12 @@ export class TransactionController {
 	@UseGuards(RoleGuard)
 	@Roles([UserRoles.ADMIN, UserRoles.EDITOR])
 	async verifyPaystackDeposit(
+		@GetUser() user: User,
 		@Query('reference', UUIDValidationPipe) reference: string
 	) {
-		return await this.transactionService.verifyPaystackDeposit(reference)
+		return await this.transactionService.verifyPaystackDeposit({
+			user,
+			reference
+		})
 	}
 }

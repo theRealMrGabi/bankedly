@@ -2,7 +2,7 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common'
 import { OnEvent } from '@nestjs/event-emitter'
 
 import { PostMarkService, MailDto } from './postmark.service'
-import { AuditService, AuditLog } from './auditLog.service'
+import { AuditService } from './auditLog.service'
 import { EventsConstants } from '../utils'
 
 @Injectable()
@@ -25,14 +25,14 @@ export class EventHandlerService {
 		}
 	}
 
-	@OnEvent(EventsConstants.AUDIT_LOG)
-	async handleAuditServiceLogs(event: AuditLog) {
-		try {
-			await this.auditService.log(event)
-		} catch (error) {
-			throw new InternalServerErrorException(
-				`Failed to send audit log: ${error.message}`
-			)
-		}
-	}
+	// @OnEvent(EventsConstants.AUDIT_LOG)
+	// async handleAuditServiceLogs(event: AuditLog) {
+	// 	try {
+	// 		await this.auditService.log(event)
+	// 	} catch (error) {
+	// 		throw new InternalServerErrorException(
+	// 			`Failed to send audit log: ${error.message}`
+	// 		)
+	// 	}
+	// }
 }

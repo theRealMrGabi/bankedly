@@ -12,7 +12,8 @@ export enum TransactionGateway {
 
 export enum TransactionStatus {
 	IN_PROGRESS = 'in_progress',
-	COMPLETED = 'completed',
+	SUCCESS = 'success',
+	FAILED = 'failed',
 	CANCELLED = 'cancelled'
 }
 

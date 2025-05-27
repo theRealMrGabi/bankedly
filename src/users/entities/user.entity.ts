@@ -23,7 +23,7 @@ export class User {
 	@Column({ unique: true })
 	username: string
 
-	@Column()
+	@Column({ select: false })
 	@Exclude()
 	password: string
 

@@ -1,14 +1,25 @@
 import {
 	Injectable,
 	NotFoundException,
-	ServiceUnavailableException
+	ServiceUnavailableException,
+	NotAcceptableException,
+	BadRequestException
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, FindOneOptions, FindManyOptions } from 'typeorm'
+import { EventEmitter2 } from '@nestjs/event-emitter'
+
+import {
+	Repository,
+	FindOneOptions,
+	FindManyOptions,
+	DataSource,
+	QueryRunner
+} from 'typeorm'
 
 import { User } from '../users/entities/user.entity'
 import { Transaction } from './entities/transaction.entity'
 import { PaymentService } from '../services/payment.service'
+import { AccountService } from '../account/account.service'
 import { CreateTransactionDto } from './dto/createTransaction.dto'
 import { InitiatePaystackDepositDto } from './dto/initiatePaystackDeposit.dto'
 import {
@@ -16,13 +27,18 @@ import {
 	TransactionStatus,
 	TransactionType
 } from './transactions.interface'
+import { AuditLog } from '../services/auditLog.service'
+import { EventsConstants } from '../utils'
 
 @Injectable()
 export class TransactionService {
 	constructor(
 		@InjectRepository(Transaction)
 		private transactionRepository: Repository<Transaction>,
-		private paymentService: PaymentService
+		private paymentService: PaymentService,
+		private accountService: AccountService,
+		private dataSource: DataSource,
+		private eventEmitter: EventEmitter2
 	) {}
 
 	async findOne(options: FindOneOptions<Transaction>) {
@@ -98,18 +114,114 @@ export class TransactionService {
 		}
 	}
 
-	/**
-	 * paystack callback url sample
-	 * http://localhost:7530/api/v1/transactions/verify-paystack-deposit?trxref=3384359f-1590-490b-81b8-9f025ca461f9&reference=3384359f-1590-490b-81b8-9f025ca461f9
-	 */
-
-	async verifyPaystackDeposit(reference: string) {
+	async verifyPaystackDeposit({
+		reference,
+		user
+	}: {
+		reference: string
+		user: User
+	}) {
 		try {
 			const transaction = await this.fetchTransactionByReference(reference)
 
-			return transaction
+			if (transaction.status !== TransactionStatus.IN_PROGRESS) {
+				throw new NotAcceptableException('Transaction status not supported')
+			}
+
+			const amount = parseFloat(transaction.amount.toFixed(2))
+
+			const isValidTransaction =
+				await this.paymentService.verifyPaystackPayment({
+					reference,
+					amount
+				})
+
+			if (!isValidTransaction) {
+				throw new BadRequestException('Invalid transaction reference')
+			}
+
+			const { accountId, id } = transaction
+
+			await this.deposit({
+				accountId,
+				amount,
+				transactionId: id
+			})
+
+			this.eventEmitter.emit(EventsConstants.AUDIT_LOG, {
+				type: 'User activity',
+				action: 'ACCOUNT_DEPOSIT',
+				initiatedBy: `${user.lastname} ${user.firstname}`,
+				result: 'SUCCESS',
+				metadata: {
+					accountId,
+					amount: `NGN ${amount / 100}`
+				}
+			} satisfies AuditLog)
+
+			return {
+				message: `Deposit of NGN${amount / 100} successful`
+			}
 		} catch (error) {
 			throw error
 		}
+	}
+
+	async deposit({
+		accountId,
+		amount,
+		transactionId
+	}: {
+		accountId: string
+		transactionId: string
+		amount: number
+	}) {
+		const queryRunner = this.dataSource.createQueryRunner()
+		await queryRunner.startTransaction()
+
+		try {
+			await this.accountService.topUpBalance({ accountId, amount, queryRunner })
+
+			await this.updateStatus({
+				transactionId,
+				status: TransactionStatus.SUCCESS,
+				queryRunner
+			})
+
+			await queryRunner.commitTransaction()
+		} catch (error) {
+			await queryRunner.rollbackTransaction()
+			throw new BadRequestException('Deposit failed')
+		} finally {
+			await queryRunner.release()
+		}
+	}
+
+	async updateStatus({
+		transactionId,
+		status,
+		queryRunner
+	}: {
+		transactionId: string
+		status: TransactionStatus
+		queryRunner: QueryRunner
+	}) {
+		const transaction = await this.findOne({
+			where: {
+				id: transactionId
+			}
+		})
+
+		if (!transaction) throw new NotFoundException('Transaction not found')
+
+		// await this.transactionRepository
+		// 	.createQueryBuilder()
+		// 	.update(Transaction)
+		// 	.set({ status })
+		// 	.where('id = :transactionId', { transactionId })
+		// 	.execute()
+
+		transaction.status = status
+		return await queryRunner.manager.save(transaction)
 	}
 }

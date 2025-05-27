@@ -8,7 +8,6 @@ import {
 	JoinColumn
 } from 'typeorm'
 
-import { User } from '../../users/entities/user.entity'
 import { Account } from '../../account/entities/account.entity'
 import {
 	TransactionStatus,
@@ -21,13 +20,12 @@ export class Transaction {
 	@PrimaryGeneratedColumn('uuid')
 	id: string
 
-	@ManyToOne(() => User)
-	@JoinColumn({ name: 'userId' })
-	userId: string
+	@Column()
+	accountId: string
 
 	@ManyToOne(() => Account)
 	@JoinColumn({ name: 'accountId' })
-	accountId: string
+	account: Account
 
 	@Column('json')
 	detail: TransactionDetail
@@ -35,7 +33,11 @@ export class Transaction {
 	@Column()
 	reference: string
 
-	@Column('decimal', { default: 0.0, precision: 10, scale: 2 })
+	@Column('decimal', {
+		default: 0.0,
+		precision: 10,
+		scale: 2
+	})
 	amount: number
 
 	@Column({

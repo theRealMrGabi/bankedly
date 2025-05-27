@@ -20,13 +20,16 @@ export class Account {
 	accountNumber: string
 
 	@ManyToOne(() => User, (user) => user.bankAccounts, {
-		nullable: false,
-		eager: true
+		nullable: false
 	})
 	@JoinColumn({ name: 'userId' })
 	user: User
 
-	@Column('decimal', { default: 0.0, precision: 10, scale: 2 })
+	@Column('decimal', {
+		default: 0.0,
+		precision: 10,
+		scale: 2
+	})
 	balance: number
 
 	@Column({

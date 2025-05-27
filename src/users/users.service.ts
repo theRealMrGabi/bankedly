@@ -53,11 +53,11 @@ export class UsersService {
 	}
 
 	async findByEmail(email: string) {
-		return await this.userRepository.findOne({
-			where: {
-				email
-			}
-		})
+		return await this.userRepository
+			.createQueryBuilder('user')
+			.addSelect('user.password')
+			.where('user.email = :email', { email })
+			.getOne()
 	}
 
 	async findUsers({
@@ -135,11 +135,11 @@ export class UsersService {
 		userId: string
 		payload: Partial<User>
 	}) {
-		const user = await this.findById(userId)
-		if (!user) throw new NotFoundException('User not found')
-
-		Object.assign(user, payload)
 		try {
+			const user = await this.findById(userId)
+			if (!user) throw new NotFoundException('User not found')
+			Object.assign(user, payload)
+
 			return await this.userRepository.save(user)
 		} catch (error) {
 			throw new InternalServerErrorException('Error updating user')

@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Brackets, Repository } from 'typeorm'
+import { Brackets, Repository, FindOneOptions, QueryRunner } from 'typeorm'
 import { instanceToPlain } from 'class-transformer'
 import { EventEmitter2 } from '@nestjs/event-emitter'
 
@@ -131,6 +131,7 @@ export class AccountService {
 
 			const account = this.accountRepository.create(payload)
 			const response = await this.accountRepository.save(account)
+			console.log('🚀 ==>create account response:', response)
 
 			this.eventEmitter.emit(EventsConstants.AUDIT_LOG, {
 				type: 'User activity',
@@ -148,6 +149,49 @@ export class AccountService {
 				data: response
 			}
 		} catch (error) {
+			throw error
+		}
+	}
+
+	async findOne(options: FindOneOptions<Account>): Promise<Account> {
+		const account = await this.accountRepository.findOne(options)
+
+		return instanceToPlain(account) as Account
+	}
+
+	async topUpBalance({
+		accountId,
+		amount,
+		queryRunner
+	}: {
+		accountId: string
+		amount: number
+		queryRunner: QueryRunner
+	}) {
+		try {
+			const account = await queryRunner.manager.findOne(Account, {
+				where: {
+					id: accountId
+				}
+			})
+
+			if (!account) throw new NotFoundException('Account not found')
+
+			// Apply lock using a raw query
+			await queryRunner.query(
+				'SELECT id FROM account where id = $1 FOR UPDATE',
+				[accountId]
+			)
+
+			const currentBalance = parseFloat(account.balance.toString())
+
+			const newBalance = currentBalance + amount
+
+			account.balance = parseFloat(newBalance.toFixed(2))
+
+			return await queryRunner.manager.save(account)
+		} catch (error) {
+			console.error('Error during top-up:', error)
 			throw error
 		}
 	}
