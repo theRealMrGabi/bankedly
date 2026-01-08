@@ -9,7 +9,7 @@ import { UserRoles } from '../../users/users.interface'
 import { User } from '../../users/entities/user.entity'
 
 @Injectable()
-export class AdminGuard implements CanActivate {
+export class RoleGuard implements CanActivate {
 	constructor(private reflector: Reflector) {}
 
 	canActivate(context: ExecutionContext): boolean {

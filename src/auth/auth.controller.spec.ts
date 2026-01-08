@@ -70,6 +70,8 @@ describe('AuthController', () => {
 	it('should signup a user', async () => {
 		jest.spyOn(authService, 'signup')
 
+		const res = await controller.signupUser(SignupPayload)
+
 		expect(res.message).toEqual(
 			'Signup successful. Instructions on email verification has been sent to your email.'
 		)

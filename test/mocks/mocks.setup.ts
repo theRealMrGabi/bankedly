@@ -40,6 +40,20 @@ export const authServiceMock = {
 	signout: jest.fn()
 }
 
+export const accountServiceMock = {
+	getAccounts: jest.fn(),
+	findById: jest.fn(),
+	findByUserId: jest.fn(),
+	createAccount: jest.fn()
+}
+
+export const transactionServiceMock = {
+	findOne: jest.fn(),
+	getAll: jest.fn(),
+	fetchTransactionByReference: jest.fn(),
+	initiatePaystackDeposit: jest.fn()
+}
+
 export const OtpServiceMock = {
 	generateOtp: jest.fn().mockImplementation(() => generateRandomNumber())
 }

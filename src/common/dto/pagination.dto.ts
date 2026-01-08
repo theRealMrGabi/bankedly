@@ -2,6 +2,8 @@ import { IsEnum, IsInt, IsOptional, Max, Min, IsString } from 'class-validator'
 import { Type } from 'class-transformer'
 import 'reflect-metadata'
 
+import { SortOrder } from '../../interface/utils.interface'
+
 export class PaginationQueryDto {
 	@IsOptional()
 	@Type(() => Number)
@@ -18,7 +20,7 @@ export class PaginationQueryDto {
 
 	@IsOptional()
 	@IsEnum(['ASC', 'DESC'])
-	order?: 'ASC' | 'DESC' = 'DESC'
+	order?: SortOrder = 'DESC'
 
 	@IsOptional()
 	@IsString()

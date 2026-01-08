@@ -31,7 +31,8 @@ async function resetToSeededState(dataSource: DataSource, seededState: any) {
 	const entities = dataSource.entityMetadatas
 	for (const entity of entities) {
 		const repository = dataSource.getRepository(entity.name)
-		await repository.clear()
+		// await repository.clear()
+		await repository.query(`TRUNCATE TABLE "${entity.tableName}" CASCADE`)
 		if (seededState[entity.name].length > 0) {
 			await repository.insert(seededState[entity.name])
 		}

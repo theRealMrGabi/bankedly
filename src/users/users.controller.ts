@@ -18,7 +18,7 @@ import { GetUser } from '../decorators/user.decorator'
 import { UUIDValidationPipe } from '../pipes/uuid-validation.pipe'
 import { Serialize } from '../common/interceptors/serialize.interceptor'
 import { UserDto } from './dto/user.dto'
-import { AdminGuard } from '../common/guards/admin.guard'
+import { RoleGuard } from '../common/guards/role.guard'
 import { Roles } from '../interceptors/roles.interceptor'
 import { UserRoles } from './users.interface'
 import { CreateBackOfficeStaffDto } from './dto/createBackofficeStaff.dto'
@@ -51,7 +51,7 @@ export class UsersController {
 	) {}
 
 	@Get()
-	@UseGuards(AdminGuard)
+	@UseGuards(RoleGuard)
 	@Roles([UserRoles.ADMIN])
 	async getUsers(
 		@Query() query: PaginationQueryDto,
@@ -81,7 +81,7 @@ export class UsersController {
 
 	@Get('/:id')
 	@Serialize(UserDto)
-	@UseGuards(AdminGuard)
+	@UseGuards(RoleGuard)
 	@Roles([UserRoles.ADMIN, UserRoles.EDITOR])
 	async getUserById(@Param('id', UUIDValidationPipe) id: string) {
 		const user = await this.usersService.findById(id)
@@ -94,7 +94,7 @@ export class UsersController {
 	}
 
 	@Post('/backoffice/create')
-	@UseGuards(AdminGuard)
+	@UseGuards(RoleGuard)
 	@Roles([UserRoles.ADMIN])
 	async createBackofficeStaff(
 		@GetUser() user: User,

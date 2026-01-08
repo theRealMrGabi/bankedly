@@ -25,6 +25,8 @@ import { CustomCacheInterceptor } from './interceptors/CacheInterceptor'
 import { AuthGuard } from './common/guards/auth.guard'
 import { getJwtModuleOptions } from './config/jwt.config'
 import { LoggerMiddleware } from './middlewares/logger.middleware'
+import { AccountModule } from './account/account.module'
+import { TransactionModule } from './transactions/transactions.module'
 
 @Module({
 	imports: [
@@ -57,7 +59,9 @@ import { LoggerMiddleware } from './middlewares/logger.middleware'
 		JwtModule.registerAsync(getJwtModuleOptions()),
 		EventEmitterModule.forRoot(),
 		UsersModule,
-		AuthModule
+		AuthModule,
+		AccountModule,
+		TransactionModule
 	],
 	controllers: [AppController],
 	providers: [
